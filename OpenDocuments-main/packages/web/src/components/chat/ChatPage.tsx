@@ -146,6 +146,7 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
       await refreshWorkbench()
     } catch (error) {
       useChatStore.getState().setActiveError(error instanceof Error ? error.message : t('chat.errorUpload'))
+      throw error
     } finally {
       setUploading(false)
     }

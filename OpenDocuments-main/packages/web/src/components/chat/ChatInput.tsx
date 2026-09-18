@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Paperclip, Send } from 'lucide-react'
+import { Paperclip, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { translate as tr } from '../../lib/i18n'
 
@@ -25,6 +25,7 @@ export function ChatInput({
   const { locale } = useAppStore()
   const t = (key: string, values?: Record<string, string | number>) => tr(locale, key, values)
   const [input, setInput] = useState('')
+  const [attachStatus, setAttachStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -48,8 +49,12 @@ export function ChatInput({
 
   const handleAttach = async (file: File | undefined) => {
     if (!file || !onAttach || disabled || uploading) return
+    setAttachStatus('uploading')
     try {
       await onAttach(file)
+      setAttachStatus('success')
+    } catch {
+      setAttachStatus('error')
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -91,7 +96,15 @@ export function ChatInput({
                 aria-label={t('chat.uploadSource')}
                 title={uploading ? t('chat.uploadingSource') : t('chat.uploadSource')}
               >
-                <Paperclip size={19} strokeWidth={2} />
+                {attachStatus === 'uploading' ? (
+                  <Loader2 size={19} strokeWidth={2} className="animate-spin text-blue-500" />
+                ) : attachStatus === 'success' ? (
+                  <CheckCircle2 size={19} strokeWidth={2} className="text-emerald-500" />
+                ) : attachStatus === 'error' ? (
+                  <AlertCircle size={19} strokeWidth={2} className="text-red-500" />
+                ) : (
+                  <Paperclip size={19} strokeWidth={2} />
+                )}
               </button>
             </div>
           ) : <div />}
