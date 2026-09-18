@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDownUp, FileText, RefreshCw, Search, Trash2 } from 'lucide-react'
+import { ArrowDownUp, FileText, GitCompareArrows, RefreshCw, Search, Trash2 } from 'lucide-react'
 import { deleteDocument, listDocuments } from '../../lib/api'
 import { UploadZone } from './UploadZone'
 import { DocumentDetail } from './DocumentDetail'
+import { DocumentCompare } from './DocumentCompare'
 import type { Document } from '../../lib/types'
 import { useAppStore } from '../../stores/appStore'
 import { translate as tr, type Locale } from '../../lib/i18n'
@@ -41,6 +42,7 @@ export function DocumentsPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [sourceFilter, setSourceFilter] = useState('all')
   const [sortKey, setSortKey] = useState<SortKey>('updated')
+  const [compareMode, setCompareMode] = useState(false)
 
   const refresh = async () => {
     setLoading(true)
@@ -116,6 +118,22 @@ export function DocumentsPage() {
     )
   }
 
+  if (compareMode) {
+    return (
+      <div className="min-h-full bg-slate-50 px-6 py-6 text-slate-950">
+        <div className="mx-auto mb-5 flex max-w-6xl items-center gap-2">
+          <button
+            onClick={() => setCompareMode(false)}
+            className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+          >
+            {t('docDetail.back')}
+          </button>
+        </div>
+        <DocumentCompare />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-full bg-slate-50 px-6 py-6 text-slate-950">
       <div className="mx-auto max-w-6xl space-y-5">
@@ -127,13 +145,22 @@ export function DocumentsPage() {
               {t('documents.subtitle')}
             </p>
           </div>
-          <button
-            onClick={() => void refresh()}
-            className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-600 shadow-sm hover:bg-slate-50"
-          >
-            <RefreshCw size={15} />
-            {t('common.refresh')}
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button
+              onClick={() => void refresh()}
+              className="flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-[13px] font-medium text-slate-600 shadow-sm hover:bg-slate-50"
+            >
+              <RefreshCw size={15} />
+              {t('common.refresh')}
+            </button>
+            <button
+              onClick={() => setCompareMode(true)}
+              className="flex h-9 items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 text-[13px] font-semibold text-blue-700 hover:bg-blue-100"
+            >
+              <GitCompareArrows size={15} />
+              {t('documents.compareTitle')}
+            </button>
+          </div>
         </header>
 
         {error && (

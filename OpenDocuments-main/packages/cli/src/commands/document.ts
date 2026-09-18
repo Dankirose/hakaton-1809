@@ -96,5 +96,25 @@ export function documentCommand() {
       } finally { await shutdownContext() }
     })
 
+  cmd.command('compare <leftId> <rightId>')
+    .description('Compare two documents (active versions)')
+    .action(async (leftId, rightId) => {
+      const ctx = await getContext()
+      try {
+        const result = ctx.versionManager.compareDocuments(leftId, rightId)
+        if (!result) { log.fail('Cannot compare these documents (no recorded versions)'); return }
+        log.heading(`Compare: ${result.left.title}  vs  ${result.right.title}`)
+        log.info(`similarity: ${(result.similarity * 100).toFixed(1)}%  ` +
+          `added: ${result.changes.added}  modified: ${result.changes.modified}  ` +
+          `removed: ${result.changes.removed}  unchanged: ${result.changes.unchanged}`)
+        for (const chunk of result.added) log.ok(`+ [${result.right.title}] ${chunk.content.slice(0, 120)}`)
+        for (const item of result.modified) {
+          log.fail(`- [${result.left.title}] ${item.before.content.slice(0, 120)}`)
+          log.ok(`+ [${result.right.title}] ${item.after.content.slice(0, 120)}`)
+        }
+        for (const chunk of result.removed) log.fail(`- [${result.left.title}] ${chunk.content.slice(0, 120)}`)
+      } finally { await shutdownContext() }
+    })
+
   return cmd
 }

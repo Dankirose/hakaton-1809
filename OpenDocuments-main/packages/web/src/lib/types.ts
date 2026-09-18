@@ -135,6 +135,24 @@ export interface DocumentVersionDiff {
   modified: Array<{ before: DocumentVersionChunk; after: DocumentVersionChunk }>
 }
 
+export interface DocumentComparison {
+  left: { id: string; title: string }
+  right: { id: string; title: string }
+  similarity: number
+  changes: {
+    added: number
+    removed: number
+    modified: number
+    unchanged: number
+    addedChunks: string[]
+    removedChunks: string[]
+  }
+  added: DocumentVersionChunk[]
+  removed: DocumentVersionChunk[]
+  modified: Array<{ before: DocumentVersionChunk; after: DocumentVersionChunk }>
+  unchanged: DocumentVersionChunk[]
+}
+
 export interface Workspace {
   id: string
   name: string

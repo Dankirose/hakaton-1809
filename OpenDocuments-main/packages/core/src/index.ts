@@ -95,6 +95,8 @@ export {
   type VersionChunkInput,
   type VersionDiff,
   type RecordVersionOptions,
+  type DocumentComparison,
+  type ComparisonDocument,
 } from './document/version-manager.js'
 export { TagManager, type Tag } from './document/tag-manager.js'
 export { CollectionManager, type Collection } from './document/collection-manager.js'

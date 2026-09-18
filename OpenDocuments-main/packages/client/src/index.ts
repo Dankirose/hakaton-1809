@@ -83,6 +83,24 @@ export interface DocumentVersionDiff {
   modified: Array<{ before: DocumentVersionChunk; after: DocumentVersionChunk }>
 }
 
+export interface DocumentComparison {
+  left: { id: string; title: string }
+  right: { id: string; title: string }
+  similarity: number
+  changes: {
+    added: number
+    removed: number
+    modified: number
+    unchanged: number
+    addedChunks: string[]
+    removedChunks: string[]
+  }
+  added: DocumentVersionChunk[]
+  removed: DocumentVersionChunk[]
+  modified: Array<{ before: DocumentVersionChunk; after: DocumentVersionChunk }>
+  unchanged: DocumentVersionChunk[]
+}
+
 export interface UploadDocumentResponse {
   documentId: string
   chunks: number
@@ -183,6 +201,12 @@ export class OpenDocumentsClient {
     if (opts?.to) params.set('to', String(opts.to))
     const query = params.toString()
     return this.request(`/documents/${encodeURIComponent(id)}/versions/diff${query ? `?${query}` : ''}`)
+  }
+
+  /** Compare the active versions of two arbitrary documents. */
+  async compareDocuments(leftId: string, rightId: string): Promise<DocumentComparison> {
+    const params = new URLSearchParams({ left: leftId, right: rightId })
+    return this.request(`/documents/compare?${params.toString()}`)
   }
 
   async getHealth(): Promise<{ status: string; version: string }> {

@@ -41,7 +41,7 @@ export interface IngestPipelineOptions {
   versionManager?: DocumentVersionManager
 }
 
-const BATCH_SIZE = 32
+const BATCH_SIZE = 16
 
 export class IngestPipeline {
   private redactor?: PIIRedactor

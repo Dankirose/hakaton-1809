@@ -19,6 +19,23 @@ export function documentRoutes(ctx: AppContext) {
     return c.json({ documents: docs })
   })
 
+  // Compare two arbitrary documents (their active/latest versions). Registered
+  // before the `:id` route so "compare" is not parsed as a document id.
+  app.get('/api/v1/documents/compare', requireScope('document:read'), (c) => {
+    const { store, versionManager } = getWorkspaceServices(c, ctx)
+    const left = c.req.query('left')
+    const right = c.req.query('right')
+    if (!left || !right) return c.json({ error: 'Both "left" and "right" document ids are required' }, 400)
+    if (left === right) return c.json({ error: 'Cannot compare a document with itself' }, 400)
+    if (!store.getDocument(left) || !store.getDocument(right)) {
+      return c.json({ error: 'Document not found' }, 404)
+    }
+
+    const comparison = versionManager.compareDocuments(left, right)
+    if (!comparison) return c.json({ error: 'No recorded version to compare' }, 404)
+    return c.json(comparison)
+  })
+
   // Restore a deleted document
   app.post('/api/v1/documents/:id/restore', requireScope('document:write'), (c) => {
     const { store } = getWorkspaceServices(c, ctx)

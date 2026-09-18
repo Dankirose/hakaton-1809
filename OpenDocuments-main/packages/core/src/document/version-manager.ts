@@ -64,6 +64,25 @@ export interface VersionDiff {
   modified: Array<{ before: VersionChunk; after: VersionChunk }>
 }
 
+/** One side of a cross-document comparison. */
+export interface ComparisonDocument {
+  id: string
+  title: string
+}
+
+/** Full structural diff between two arbitrary documents (not two versions of one). */
+export interface DocumentComparison {
+  left: ComparisonDocument
+  right: ComparisonDocument
+  /** Overall token-level Jaccard similarity between the two documents (0..1). */
+  similarity: number
+  changes: Omit<VersionChanges, 'fromVersion'>
+  added: VersionChunk[]
+  removed: VersionChunk[]
+  modified: Array<{ before: VersionChunk; after: VersionChunk }>
+  unchanged: VersionChunk[]
+}
+
 const PREVIEW_LENGTH = 160
 /** Above this word-overlap score an unmatched chunk is treated as an edit. */
 const SIMILARITY_THRESHOLD = 0.5
@@ -328,6 +347,46 @@ export class DocumentVersionManager {
       added,
       removed,
       modified,
+    }
+  }
+
+  /**
+   * Compare the active (latest) versions of two arbitrary documents in the
+   * workspace. Useful for surfacing contradictions between different LNA when a
+   * norm is described differently in two regulations.
+   */
+  compareDocuments(leftId: string, rightId: string): DocumentComparison | undefined {
+    const left = this.getActiveVersion(leftId)
+    const right = this.getActiveVersion(rightId)
+    if (!left || !right || left.documentId === right.documentId) return undefined
+
+    const leftChunks = this.getVersionChunks(leftId, left.version)
+    const rightChunks = this.getVersionChunks(rightId, right.version)
+    const { added, removed, modified, unchanged, changes } = this.diffChunks(leftChunks, rightChunks)
+
+    let totalSimilarity = 0
+    if (leftChunks.length > 0 && rightChunks.length > 0) {
+      const leftSet = tokenize(leftChunks.map((chunk) => chunk.content).join('\n'))
+      const rightSet = tokenize(rightChunks.map((chunk) => chunk.content).join('\n'))
+      let intersection = 0
+      for (const token of leftSet) {
+        if (rightSet.has(token)) intersection++
+      }
+      totalSimilarity = intersection / (leftSet.size + rightSet.size - intersection)
+    }
+
+    const leftDoc = this.db.get<Row>('SELECT title FROM documents WHERE id = ?', [leftId])
+    const rightDoc = this.db.get<Row>('SELECT title FROM documents WHERE id = ?', [rightId])
+
+    return {
+      left: { id: leftId, title: String(leftDoc?.title ?? left.title ?? leftId) },
+      right: { id: rightId, title: String(rightDoc?.title ?? right.title ?? rightId) },
+      similarity: totalSimilarity,
+      changes,
+      added,
+      removed,
+      modified,
+      unchanged,
     }
   }
 

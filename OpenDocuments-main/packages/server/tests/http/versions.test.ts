@@ -94,4 +94,45 @@ describe('Document Version Routes', () => {
     const res = await app.request(`/api/v1/documents/${only.documentId}/versions/diff`)
     expect(res.status).toBe(400)
   })
+
+  it('compares two documents by their active versions', async () => {
+    const { pipeline } = ctx.forWorkspace()
+    const left = await pipeline.ingest({
+      title: 'Left policy',
+      content: '# Policy\n\nAlpha rule applies. Beta rule applies.',
+      sourceType: 'local',
+      sourcePath: 'local:left.md',
+    })
+    const right = await pipeline.ingest({
+      title: 'Right policy',
+      content: '# Policy\n\nAlpha rule applies. Gamma rule applies.',
+      sourceType: 'local',
+      sourcePath: 'local:right.md',
+    })
+    const res = await app.request(`/api/v1/documents/compare?left=${left.documentId}&right=${right.documentId}`)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.left.id).toBe(left.documentId)
+    expect(body.right.id).toBe(right.documentId)
+    expect(typeof body.similarity).toBe('number')
+    const total = body.changes.added + body.changes.modified + body.changes.removed
+    expect(total).toBeGreaterThan(0)
+  })
+
+  it('returns 400 when comparing a document with itself', async () => {
+    const { pipeline } = ctx.forWorkspace()
+    const doc = await pipeline.ingest({
+      title: 'Same',
+      content: '# Same\n\nOnly one.',
+      sourceType: 'local',
+      sourcePath: 'local:same.md',
+    })
+    const res = await app.request(`/api/v1/documents/compare?left=${doc.documentId}&right=${doc.documentId}`)
+    expect(res.status).toBe(400)
+  })
+
+  it('returns 400 when the compare parameters are missing', async () => {
+    const res = await app.request('/api/v1/documents/compare?left=only-one')
+    expect(res.status).toBe(400)
+  })
 })

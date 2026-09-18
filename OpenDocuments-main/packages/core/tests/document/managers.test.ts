@@ -84,6 +84,39 @@ describe('Document Managers', () => {
       expect(ws2.recordVersion('doc-2', 'hash2', 1)).toBeDefined()
       expect(ws1.listVersions('doc-2')).toHaveLength(0)
     })
+
+    it('compares two documents by their active versions', () => {
+      const mgr = new DocumentVersionManager(db, 'ws-1')
+      db.run("INSERT INTO documents (id, workspace_id, title, source_type, source_path) VALUES ('doc-3', 'ws-1', 'three.md', 'local', '/three.md')")
+      mgr.recordVersion('doc-1', 'hash1', 3, {
+        chunks: [
+          { position: 0, content: 'alpha beta' },
+          { position: 1, content: 'gamma delta' },
+          { position: 2, content: 'epsilon' },
+        ],
+      })
+      mgr.recordVersion('doc-3', 'hash2', 2, {
+        chunks: [
+          { position: 0, content: 'alpha beta' },
+          { position: 1, content: 'gamma delta epsilon' },
+        ],
+      })
+
+      const comparison = mgr.compareDocuments('doc-1', 'doc-3')
+      expect(comparison).toBeDefined()
+      expect(comparison?.left.id).toBe('doc-1')
+      expect(comparison?.right.id).toBe('doc-3')
+      expect(comparison?.changes.unchanged).toBe(1)
+      expect(comparison?.changes.modified).toBe(1)
+      expect(comparison?.changes.removed).toBe(1)
+      expect(comparison?.similarity).toBeGreaterThan(0)
+    })
+
+    it('refuses to compare a document with itself', () => {
+      const mgr = new DocumentVersionManager(db, 'ws-1')
+      mgr.recordVersion('doc-1', 'hash1', 1, { chunks: [{ position: 0, content: 'alpha' }] })
+      expect(mgr.compareDocuments('doc-1', 'doc-1')).toBeUndefined()
+    })
   })
 
   describe('TagManager', () => {

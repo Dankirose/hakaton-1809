@@ -1,4 +1,4 @@
-import type { QueryResult, Document, StatsResponse, AdminStatsResponse, SearchQualityResponse, QueryLogsResponse, PluginHealthResponse, ConnectorStatusResponse, Conversation, ConversationMessage, WorkbenchResponse, Collection, Workspace, DocumentVersion, DocumentVersionDiff } from './types'
+import type { QueryResult, Document, StatsResponse, AdminStatsResponse, SearchQualityResponse, QueryLogsResponse, PluginHealthResponse, ConnectorStatusResponse, Conversation, ConversationMessage, WorkbenchResponse, Collection, Workspace, DocumentVersion, DocumentVersionDiff, DocumentComparison } from './types'
 import { withStoredApiKey } from './auth'
 
 const BASE = '/api/v1'
@@ -87,6 +87,11 @@ export async function getDocumentVersionDiff(
   if (opts?.to) params.set('to', String(opts.to))
   const query = params.toString()
   return request(`/documents/${encodeURIComponent(id)}/versions/diff${query ? `?${query}` : ''}`)
+}
+
+export async function compareDocuments(leftId: string, rightId: string): Promise<DocumentComparison> {
+  const params = new URLSearchParams({ left: leftId, right: rightId })
+  return request(`/documents/compare?${params.toString()}`)
 }
 
 export async function uploadDocument(file: File): Promise<{ documentId: string; chunks: number; status: string }> {
