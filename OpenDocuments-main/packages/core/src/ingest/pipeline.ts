@@ -312,9 +312,17 @@ export class IngestPipeline {
         store.updateSourceVersion(documentId, input.sourceVersion)
       }
 
-      // Record version if version manager is configured
+      // Record version (with chunk snapshot) if version manager is configured
       if (this.opts.versionManager) {
-        this.opts.versionManager.recordVersion(documentId, contentHash, chunksWithEmbeddings.length)
+        this.opts.versionManager.recordVersion(documentId, contentHash, chunksWithEmbeddings.length, {
+          title: input.title,
+          sourceVersion: input.sourceVersion,
+          chunks: chunksWithEmbeddings.map((chunk) => ({
+            position: chunk.position,
+            content: chunk.content,
+            headingHierarchy: chunk.headingHierarchy,
+          })),
+        })
       }
 
       eventBus.emit('document:indexed', { documentId, chunks: chunksWithEmbeddings.length })

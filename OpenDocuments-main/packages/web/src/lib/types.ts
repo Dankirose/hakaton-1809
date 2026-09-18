@@ -95,6 +95,46 @@ export interface Collection {
   createdAt: string
 }
 
+export interface DocumentVersionChanges {
+  fromVersion: number | null
+  added: number
+  removed: number
+  modified: number
+  unchanged: number
+  addedChunks: string[]
+  removedChunks: string[]
+}
+
+export interface DocumentVersion {
+  id: string
+  documentId: string
+  version: number
+  contentHash: string
+  chunkCount: number | null
+  title: string | null
+  sourceVersion: string | null
+  isActive: boolean
+  changes: DocumentVersionChanges | null
+  createdAt: string
+}
+
+export interface DocumentVersionChunk {
+  position: number
+  content: string
+  headingHierarchy: string[]
+  contentHash: string
+}
+
+export interface DocumentVersionDiff {
+  documentId: string
+  fromVersion: number
+  toVersion: number
+  changes: DocumentVersionChanges
+  added: DocumentVersionChunk[]
+  removed: DocumentVersionChunk[]
+  modified: Array<{ before: DocumentVersionChunk; after: DocumentVersionChunk }>
+}
+
 export interface Workspace {
   id: string
   name: string

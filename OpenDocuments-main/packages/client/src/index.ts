@@ -38,6 +38,51 @@ export interface DocumentListResponse {
   documents: Array<{ id: string; title: string; source_type: string; status: string; chunk_count: number }>
 }
 
+export interface DocumentVersionChanges {
+  fromVersion: number | null
+  added: number
+  removed: number
+  modified: number
+  unchanged: number
+  addedChunks: string[]
+  removedChunks: string[]
+}
+
+export interface DocumentVersion {
+  id: string
+  documentId: string
+  version: number
+  contentHash: string
+  chunkCount: number | null
+  title: string | null
+  sourceVersion: string | null
+  isActive: boolean
+  changes: DocumentVersionChanges | null
+  createdAt: string
+}
+
+export interface DocumentVersionListResponse {
+  versions: DocumentVersion[]
+  activeVersion: DocumentVersion | null
+}
+
+export interface DocumentVersionChunk {
+  position: number
+  content: string
+  headingHierarchy: string[]
+  contentHash: string
+}
+
+export interface DocumentVersionDiff {
+  documentId: string
+  fromVersion: number
+  toVersion: number
+  changes: DocumentVersionChanges
+  added: DocumentVersionChunk[]
+  removed: DocumentVersionChunk[]
+  modified: Array<{ before: DocumentVersionChunk; after: DocumentVersionChunk }>
+}
+
 export interface UploadDocumentResponse {
   documentId: string
   chunks: number
@@ -113,6 +158,31 @@ export class OpenDocumentsClient {
 
   async deleteDocument(id: string): Promise<void> {
     await this.request(`/documents/${id}`, { method: 'DELETE' })
+  }
+
+  /** List the recorded versions of a document, newest first. */
+  async listDocumentVersions(id: string): Promise<DocumentVersionListResponse> {
+    return this.request(`/documents/${encodeURIComponent(id)}/versions`)
+  }
+
+  /** Fetch a single recorded version of a document. */
+  async getDocumentVersion(id: string, version: number): Promise<DocumentVersion> {
+    return this.request(`/documents/${encodeURIComponent(id)}/versions/${version}`)
+  }
+
+  /**
+   * Diff two versions of a document. Defaults to the newest version against
+   * the one before it.
+   */
+  async getDocumentVersionDiff(
+    id: string,
+    opts?: { from?: number; to?: number },
+  ): Promise<DocumentVersionDiff> {
+    const params = new URLSearchParams()
+    if (opts?.from) params.set('from', String(opts.from))
+    if (opts?.to) params.set('to', String(opts.to))
+    const query = params.toString()
+    return this.request(`/documents/${encodeURIComponent(id)}/versions/diff${query ? `?${query}` : ''}`)
   }
 
   async getHealth(): Promise<{ status: string; version: string }> {

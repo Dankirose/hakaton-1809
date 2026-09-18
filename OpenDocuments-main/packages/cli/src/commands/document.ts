@@ -56,5 +56,45 @@ export function documentCommand() {
     } finally { await shutdownContext() }
   })
 
+  cmd.command('versions <id>').description('List version history of a document').action(async (id) => {
+    const ctx = await getContext()
+    try {
+      const versions = ctx.versionManager.listVersions(id)
+      if (versions.length === 0) { log.info('No versions recorded'); return }
+      log.heading('Document versions')
+      for (const v of versions) {
+        const active = v.isActive ? chalk.green(' [active]') : ''
+        const changes = v.changes
+          ? `  +${v.changes.added} ~${v.changes.modified} -${v.changes.removed}`
+          : ''
+        log.dim(`  v${String(v.version).padStart(3)}  ${v.createdAt}  ${String(v.chunkCount ?? 0).padStart(4)} chunks${changes}${active}`)
+      }
+    } finally { await shutdownContext() }
+  })
+
+  cmd.command('diff <id>')
+    .description('Show what changed in a document version')
+    .option('--from <version>', 'From version (default: previous)')
+    .option('--to <version>', 'To version (default: latest)')
+    .action(async (id, opts: { from?: string; to?: string }) => {
+      const ctx = await getContext()
+      try {
+        const latest = ctx.versionManager.getLatestVersion(id)
+        if (!latest) { log.fail('No versions recorded for document'); return }
+        const to = opts.to ? Number.parseInt(opts.to, 10) : latest.version
+        const from = opts.from ? Number.parseInt(opts.from, 10) : to - 1
+        if (Number.isNaN(to) || Number.isNaN(from) || from < 1) {
+          log.fail('Invalid version range'); return
+        }
+        const diff = ctx.versionManager.diffVersions(id, from, to)
+        if (!diff) { log.fail('Version not found'); return }
+        log.heading(`Changes v${from} -> v${to}`)
+        log.info(`added: ${diff.changes.added}  modified: ${diff.changes.modified}  removed: ${diff.changes.removed}  unchanged: ${diff.changes.unchanged}`)
+        for (const chunk of diff.added) log.ok(`+ ${chunk.content.slice(0, 120)}`)
+        for (const item of diff.modified) log.info(`~ ${item.after.content.slice(0, 120)}`)
+        for (const chunk of diff.removed) log.fail(`- ${chunk.content.slice(0, 120)}`)
+      } finally { await shutdownContext() }
+    })
+
   return cmd
 }

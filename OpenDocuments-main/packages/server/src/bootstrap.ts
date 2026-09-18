@@ -358,6 +358,7 @@ export interface AppContext {
   connectorManager: ConnectorManager
   apiKeyManager: APIKeyManager
   auditLogger: AuditLogger
+  versionManager: DocumentVersionManager
   readiness: {
     modelStatus: 'ready' | 'degraded'
     issues: Array<{
@@ -383,6 +384,7 @@ export interface WorkspaceServices {
   connectorManager: ConnectorManager
   tagManager: TagManager
   collectionManager: CollectionManager
+  versionManager: DocumentVersionManager
 }
 
 /* ------------------------------------------------------------------ */
@@ -597,6 +599,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
     const connectorManagers = new Map<string, ConnectorManager>()
     const tagManagers = new Map<string, TagManager>()
     const collectionManagers = new Map<string, CollectionManager>()
+    const versionManagers = new Map<string, DocumentVersionManager>()
     const extraConnectorInstances: ConnectorPlugin[] = []
 
     const ensureWorkspaceExists = (workspaceId: string) => {
@@ -607,7 +610,16 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
 
     const autoRedactConfig = config.security.dataPolicy.autoRedact
     const redactor = new PIIRedactor(autoRedactConfig)
-    const versionManager = new DocumentVersionManager(db)
+
+    const getVersionManagerForWorkspace = (workspaceId: string) => {
+      ensureWorkspaceExists(workspaceId)
+      let manager = versionManagers.get(workspaceId)
+      if (!manager) {
+        manager = new DocumentVersionManager(sqliteDb, workspaceId)
+        versionManagers.set(workspaceId, manager)
+      }
+      return manager
+    }
 
     const getStoreForWorkspace = (workspaceId: string) => {
       ensureWorkspaceExists(workspaceId)
@@ -631,7 +643,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
           embeddingDimensions,
           config,
           redactor,
-          versionManager,
+          versionManager: getVersionManagerForWorkspace(workspaceId),
         })
         pipelines.set(workspaceId, scopedPipeline)
       }
@@ -885,6 +897,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
         connectorManager: getConnectorManagerForWorkspace(resolvedWorkspaceId),
         tagManager: getTagManagerForWorkspace(resolvedWorkspaceId),
         collectionManager: getCollectionManagerForWorkspace(resolvedWorkspaceId),
+        versionManager: getVersionManagerForWorkspace(resolvedWorkspaceId),
       }
     }
 
@@ -910,6 +923,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
       connectorManager,
       apiKeyManager,
       auditLogger,
+      versionManager: getVersionManagerForWorkspace(defaultWorkspace.id),
       readiness,
       createConnector: (connectorConfig) => createConnector(connectorConfig, dataDir),
       pluginManifestPath,

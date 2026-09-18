@@ -1,4 +1,4 @@
-import type { QueryResult, Document, StatsResponse, AdminStatsResponse, SearchQualityResponse, QueryLogsResponse, PluginHealthResponse, ConnectorStatusResponse, Conversation, ConversationMessage, WorkbenchResponse, Collection, Workspace } from './types'
+import type { QueryResult, Document, StatsResponse, AdminStatsResponse, SearchQualityResponse, QueryLogsResponse, PluginHealthResponse, ConnectorStatusResponse, Conversation, ConversationMessage, WorkbenchResponse, Collection, Workspace, DocumentVersion, DocumentVersionDiff } from './types'
 import { withStoredApiKey } from './auth'
 
 const BASE = '/api/v1'
@@ -72,6 +72,21 @@ export async function getDocument(id: string): Promise<Document> {
 
 export async function deleteDocument(id: string): Promise<void> {
   await request(`/documents/${id}`, { method: 'DELETE' })
+}
+
+export async function listDocumentVersions(id: string): Promise<{ versions: DocumentVersion[]; activeVersion: DocumentVersion | null }> {
+  return request(`/documents/${encodeURIComponent(id)}/versions`)
+}
+
+export async function getDocumentVersionDiff(
+  id: string,
+  opts?: { from?: number; to?: number },
+): Promise<DocumentVersionDiff> {
+  const params = new URLSearchParams()
+  if (opts?.from) params.set('from', String(opts.from))
+  if (opts?.to) params.set('to', String(opts.to))
+  const query = params.toString()
+  return request(`/documents/${encodeURIComponent(id)}/versions/diff${query ? `?${query}` : ''}`)
 }
 
 export async function uploadDocument(file: File): Promise<{ documentId: string; chunks: number; status: string }> {

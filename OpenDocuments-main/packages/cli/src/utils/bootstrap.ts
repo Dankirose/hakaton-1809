@@ -33,6 +33,7 @@ export async function getContext(): Promise<AppContext> {
         cachedCtx.ragEngine = services.ragEngine
         cachedCtx.conversationManager = services.conversationManager
         cachedCtx.connectorManager = services.connectorManager
+        cachedCtx.versionManager = services.versionManager
       }
     }
   }

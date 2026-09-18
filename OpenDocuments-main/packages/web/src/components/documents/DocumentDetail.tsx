@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
-import { ArrowLeft, Database, FileText, FolderPlus, Hash, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowLeft, Database, FileText, FolderPlus, GitCompareArrows, Hash, RefreshCw, Trash2 } from 'lucide-react'
 import { addDocumentToCollection, deleteDocument, getDocument, listCollections } from '../../lib/api'
 import type { Collection, Document } from '../../lib/types'
 import { useAppStore } from '../../stores/appStore'
 import { translate as tr, type Locale } from '../../lib/i18n'
+import { DocumentVersionHistory } from './DocumentVersionHistory'
 
 interface Props {
   documentId: string
@@ -49,6 +50,8 @@ export function DocumentDetail({ documentId, onBack, onDeleted }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [versionCount, setVersionCount] = useState(0)
+  const [compareSignal, setCompareSignal] = useState(0)
 
   const refresh = async () => {
     setLoading(true)
@@ -153,6 +156,15 @@ export function DocumentDetail({ documentId, onBack, onDeleted }: Props) {
               </div>
               <div className="flex shrink-0 gap-2">
                 <button
+                  onClick={() => setCompareSignal((value) => value + 1)}
+                  disabled={versionCount < 2}
+                  title={versionCount < 2 ? t('docDetail.compareUnavailable') : t('docDetail.compareVersions')}
+                  className="flex h-9 items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 text-[13px] font-semibold text-blue-700 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <GitCompareArrows size={15} />
+                  {t('docDetail.compareVersions')}
+                </button>
+                <button
                   onClick={() => void refresh()}
                   className="flex h-9 items-center gap-2 rounded-md border border-slate-200 px-3 text-[13px] font-medium text-slate-600 hover:bg-slate-50"
                 >
@@ -232,6 +244,12 @@ export function DocumentDetail({ documentId, onBack, onDeleted }: Props) {
             </div>
           </section>
         </div>
+
+        <DocumentVersionHistory
+          documentId={document.id}
+          compareSignal={compareSignal}
+          onVersionsLoaded={setVersionCount}
+        />
       </div>
     </div>
   )

@@ -87,7 +87,15 @@ export { hitAtK, reciprocalRank, nDCG, evaluate, type GoldCase, type EvalSummary
 
 export { ConversationManager, type Conversation, type Message } from './conversation/manager.js'
 
-export { DocumentVersionManager, type DocumentVersion } from './document/version-manager.js'
+export {
+  DocumentVersionManager,
+  type DocumentVersion,
+  type VersionChanges,
+  type VersionChunk,
+  type VersionChunkInput,
+  type VersionDiff,
+  type RecordVersionOptions,
+} from './document/version-manager.js'
 export { TagManager, type Tag } from './document/tag-manager.js'
 export { CollectionManager, type Collection } from './document/collection-manager.js'
 export { ChunkRelationManager, type ChunkRelation, type RelationType } from './document/chunk-relations.js'
