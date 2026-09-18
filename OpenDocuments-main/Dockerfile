@@ -1,11 +1,47 @@
+# syntax=docker/dockerfile:1
+
 # ── Stage 1: build ──────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim AS builder
 WORKDIR /app
-COPY package*.json turbo.json tsconfig.base.json ./
-COPY packages/ packages/
-COPY plugins/ plugins/
-RUN npm install --include=optional
-RUN rollup_version="$(node -p "require('./node_modules/rollup/package.json').version")" \
+
+# Install dependencies first (separate layer, cached unless manifests change).
+# Copy only manifests so npm install is cached across code changes.
+COPY package.json package-lock.json turbo.json tsconfig.base.json ./
+COPY packages/core/package.json packages/core/
+COPY packages/server/package.json packages/server/
+COPY packages/cli/package.json packages/cli/
+COPY packages/web/package.json packages/web/
+COPY packages/client/package.json packages/client/
+COPY plugins/connector-confluence/package.json plugins/connector-confluence/
+COPY plugins/connector-gdrive/package.json plugins/connector-gdrive/
+COPY plugins/connector-github/package.json plugins/connector-github/
+COPY plugins/connector-notion/package.json plugins/connector-notion/
+COPY plugins/connector-s3/package.json plugins/connector-s3/
+COPY plugins/connector-swagger/package.json plugins/connector-swagger/
+COPY plugins/connector-web-crawler/package.json plugins/connector-web-crawler/
+COPY plugins/connector-web-search/package.json plugins/connector-web-search/
+COPY plugins/model-anthropic/package.json plugins/model-anthropic/
+COPY plugins/model-google/package.json plugins/model-google/
+COPY plugins/model-grok/package.json plugins/model-grok/
+COPY plugins/model-ollama/package.json plugins/model-ollama/
+COPY plugins/model-openai/package.json plugins/model-openai/
+COPY plugins/parser-code/package.json plugins/parser-code/
+COPY plugins/parser-doc/package.json plugins/parser-doc/
+COPY plugins/parser-docx/package.json plugins/parser-docx/
+COPY plugins/parser-email/package.json plugins/parser-email/
+COPY plugins/parser-html/package.json plugins/parser-html/
+COPY plugins/parser-jupyter/package.json plugins/parser-jupyter/
+COPY plugins/parser-pdf/package.json plugins/parser-pdf/
+COPY plugins/parser-pptx/package.json plugins/parser-pptx/
+COPY plugins/parser-xlsx/package.json plugins/parser-xlsx/
+
+# BuildKit cache mounts: reuse npm cache + node_modules across builds,
+# so node & packages are not re-downloaded every time.
+RUN --mount=type=cache,target=/root/.npm \
+    npm install --include=optional
+
+RUN --mount=type=cache,target=/root/.npm \
+    rollup_version="$(node -p "require('./node_modules/rollup/package.json').version")" \
   && lancedb_version="$(node -p "require('./node_modules/@lancedb/lancedb/package.json').version")" \
   && node_arch="$(node -p "process.arch")" \
   && case "$node_arch" in \
@@ -13,7 +49,13 @@ RUN rollup_version="$(node -p "require('./node_modules/rollup/package.json').ver
     x64) npm install --no-save "@rollup/rollup-linux-x64-gnu@$rollup_version" "@lancedb/lancedb-linux-x64-gnu@$lancedb_version" ;; \
     *) echo "No explicit native package install for arch: $node_arch" ;; \
   esac
-RUN npx turbo build
+
+# Copy source (this layer changes often; everything above stays cached).
+COPY packages/ packages/
+COPY plugins/ plugins/
+
+RUN --mount=type=cache,target=/app/node_modules/.cache/turbo \
+    npx turbo build
 
 # ── Stage 2: runtime ────────────────────────────────────────────────────────
 FROM node:20-bookworm-slim

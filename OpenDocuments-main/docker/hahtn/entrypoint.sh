@@ -17,7 +17,7 @@ fi
 if [ "${OPENDOCUMENTS_AUTO_INDEX:-true}" = "true" ]; then
   if [ -d /demo-docs ] && [ "$(ls -A /demo-docs 2>/dev/null)" ]; then
     echo "[hahtn] Индексация документов из /demo-docs ..."
-    node packages/cli/dist/index.js index /demo-docs --reindex || echo "[hahtn] Индексация не удалась, продолжаем."
+    node packages/cli/dist/index.js index /demo-docs || echo "[hahtn] Индексация не удалась, продолжаем."
   else
     echo "[hahtn] /demo-docs пуст — пропускаем индексацию."
   fi
