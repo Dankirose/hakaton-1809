@@ -22,7 +22,7 @@ export class OllamaModelPlugin implements ModelPlugin {
 
   private baseUrl = 'http://localhost:11434'
   private llmModel = 'qwen2.5:14b'
-  private embeddingModel = 'bge-m3'
+  private embeddingModel = 'qwen3-embedding:0.6b'
 
   async setup(ctx: PluginContext): Promise<void> {
     const config = ctx.config as OllamaConfig

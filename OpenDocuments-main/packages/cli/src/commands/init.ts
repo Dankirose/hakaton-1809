@@ -125,7 +125,7 @@ export function initCommand() {
       let embeddingProvider: string | undefined
       let embeddingApiKey: string | undefined
       let llmModel = 'qwen2.5:14b'
-      let embeddingModel = 'bge-m3'
+      let embeddingModel = 'qwen3-embedding:0.6b'
 
       if (backend === 'cloud') {
         // 5. Cloud provider
@@ -172,9 +172,9 @@ export function initCommand() {
         // Set defaults based on provider
         const providerDefaults: Record<string, { llm: string; embedding: string }> = {
           openai: { llm: 'gpt-4o', embedding: 'text-embedding-3-small' },
-          anthropic: { llm: 'claude-sonnet-4-20250514', embedding: 'bge-m3' }, // Anthropic has no embedding
+          anthropic: { llm: 'claude-sonnet-4-20250514', embedding: 'qwen3-embedding:0.6b' }, // Anthropic has no embedding
           google: { llm: 'gemini-2.5-flash', embedding: 'gemini-embedding-001' },
-          grok: { llm: 'grok-3', embedding: 'bge-m3' },
+          grok: { llm: 'grok-3', embedding: 'qwen3-embedding:0.6b' },
         }
         llmModel = providerDefaults[provider].llm
         embeddingModel = providerDefaults[provider].embedding
@@ -184,7 +184,7 @@ export function initCommand() {
           const embeddingChoice = await select({
             message: 'Embedding provider:',
             choices: [
-              { name: `Local (Ollama + BGE-M3) ${chalk.dim('-- requires Ollama running')}`, value: 'ollama' },
+              { name: `Local (Ollama + Qwen3 Embedding) ${chalk.dim('-- requires Ollama running')}`, value: 'ollama' },
               { name: `OpenAI (text-embedding-3-small) ${chalk.dim('-- requires OpenAI API key')}`, value: 'openai' },
             ],
           })
@@ -196,9 +196,9 @@ export function initCommand() {
               default: '',
             })
           } else {
-            embeddingModel = 'bge-m3'
+            embeddingModel = 'qwen3-embedding:0.6b'
           }
-          log.info(`Embedding will use ${embeddingChoice === 'ollama' ? 'Ollama BGE-M3' : 'OpenAI text-embedding-3-small'}`)
+          log.info(`Embedding will use ${embeddingChoice === 'ollama' ? 'Ollama Qwen3 Embedding' : 'OpenAI text-embedding-3-small'}`)
         }
       } else {
         // Local model recommendation
@@ -224,7 +224,7 @@ export function initCommand() {
 
         embeddingModel = await input({
           message: 'Embedding model:',
-          default: 'bge-m3',
+          default: 'qwen3-embedding:0.6b',
         })
       }
 
