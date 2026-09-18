@@ -177,7 +177,7 @@ export function Sidebar() {
     <aside className="flex h-screen w-[72px] shrink-0 flex-col border-r border-slate-200 bg-white lg:w-[264px]">
       <div className="flex h-[72px] items-center justify-center gap-3 px-2 lg:justify-start lg:px-5">
         <LogoMark />
-        <h1 className="hidden text-[21px] font-semibold tracking-[-0.01em] text-slate-950 lg:block">OpenDocuments</h1>
+        <h1 className="hidden text-[21px] font-semibold tracking-[-0.01em] text-slate-950 lg:block">Gaprom-cps RAG</h1>
       </div>
 
       <nav className="px-2 pt-3">
