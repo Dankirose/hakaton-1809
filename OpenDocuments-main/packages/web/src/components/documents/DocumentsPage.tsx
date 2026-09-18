@@ -12,7 +12,7 @@ type SortKey = 'updated' | 'title' | 'chunks'
 
 function formatDate(value: string | null | undefined, locale: Locale) {
   if (!value) return tr(locale, 'common.notIndexed')
-  return new Date(value).toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US')
+  return new Date(value).toLocaleString(locale === 'ko' ? 'ko-KR' : locale === 'ru' ? 'ru-RU' : 'en-US')
 }
 
 function statusTone(status: string) {

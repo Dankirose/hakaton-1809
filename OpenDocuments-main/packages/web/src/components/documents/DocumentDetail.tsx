@@ -15,7 +15,7 @@ interface Props {
 
 function formatDate(value: string | null | undefined, locale: Locale) {
   if (!value) return tr(locale, 'common.notRecorded')
-  return new Date(value).toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US')
+  return new Date(value).toLocaleString(locale === 'ko' ? 'ko-KR' : locale === 'ru' ? 'ru-RU' : 'en-US')
 }
 
 function formatSize(bytes: number | null | undefined, locale: Locale) {

@@ -65,7 +65,7 @@ function getConversationTimestamp(conversation: Conversation, field: 'updated' |
 function formatConversationDate(conversation: Conversation, locale: Locale) {
   const value = conversation.updatedAt || conversation.updated_at || conversation.createdAt || conversation.created_at
   if (!value) return ''
-  return new Date(value).toLocaleDateString(locale === 'ko' ? 'ko-KR' : 'en-US', { month: 'short', day: 'numeric' })
+  return new Date(value).toLocaleDateString(locale === 'ko' ? 'ko-KR' : locale === 'ru' ? 'ru-RU' : 'en-US', { month: 'short', day: 'numeric' })
 }
 
 function parseSources(value: ConversationMessage['sources']): SearchResult[] | undefined {

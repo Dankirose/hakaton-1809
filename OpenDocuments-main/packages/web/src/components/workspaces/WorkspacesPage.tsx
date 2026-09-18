@@ -7,7 +7,7 @@ import { translate as tr, type Locale } from '../../lib/i18n'
 
 function formatDate(value: string | null | undefined, locale: Locale) {
   if (!value) return tr(locale, 'common.notRecorded')
-  return new Date(value).toLocaleString(locale === 'ko' ? 'ko-KR' : 'en-US')
+  return new Date(value).toLocaleString(locale === 'ko' ? 'ko-KR' : locale === 'ru' ? 'ru-RU' : 'en-US')
 }
 
 function modeTone(mode: Workspace['mode']) {
