@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'OpenDocuments',
+  title: 'Gaprom-cps RAG',
   description: 'Open source self-hosted RAG platform for AI document search across GitHub, Notion, Google Drive, Confluence, S3, local files, and web sources. Ask questions with source citations.',
   lang: 'en-US',
   base: '/OpenDocuments/',
@@ -9,10 +9,10 @@ export default defineConfig({
 
   head: [
     ['meta', { name: 'keywords', content: 'self-hosted rag, ai document search, open source rag, retrieval augmented generation, knowledge base, llm document search, ollama rag, vector search, semantic search, document qa, enterprise search alternative, mcp server, github search, notion search, google drive search' }],
-    ['meta', { property: 'og:title', content: 'OpenDocuments - Self-Hosted RAG Platform for AI Document Search' }],
+    ['meta', { property: 'og:title', content: 'Gaprom-cps RAG - Self-Hosted RAG Platform for AI Document Search' }],
     ['meta', { property: 'og:description', content: 'Open source RAG platform that connects GitHub, Notion, Google Drive, Confluence, S3, local files, and web sources, then answers questions with citations.' }],
     ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:url', content: 'https://joungminsung.github.io/OpenDocuments/' }],
+    // ['meta', { property: 'og:url', content: 'https://joungminsung.github.io/OpenDocuments/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'OpenDocuments - Self-Hosted RAG Platform' }],
     ['meta', { name: 'twitter:description', content: 'Self-hosted AI document search across GitHub, Notion, Google Drive, local files, and web sources.' }],

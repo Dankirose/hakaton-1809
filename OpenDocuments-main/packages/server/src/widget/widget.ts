@@ -24,7 +24,7 @@ export function generateWidgetScript(): string {
 
     var close = document.createElement('button');
     close.textContent = '×';
-    close.setAttribute('aria-label', 'Close OpenDocuments');
+    close.setAttribute('aria-label', 'Close Gaprom-cps RAG');
     close.style.cssText = 'position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:#0f172a;color:white;border:none;font-size:20px;cursor:pointer;display:none;z-index:2;';
 
     iframe.onload = function() {

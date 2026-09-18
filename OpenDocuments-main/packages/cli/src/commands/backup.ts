@@ -144,7 +144,7 @@ function assertServerStopped(dataDir: string): void {
     throw new Error(`PID record at ${pidFile} belongs to a different data directory.`)
   }
   if (isRecordedServerProcess(record)) {
-    throw new Error('OpenDocuments server is running. Run "opendocuments stop" before backup or restore.')
+    throw new Error('Gaprom-cps RAG server is running. Run "opendocuments stop" before backup or restore.')
   }
 }
 

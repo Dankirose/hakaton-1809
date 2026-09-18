@@ -5,7 +5,7 @@ import { ChatInput } from './ChatInput'
 import { ChatMessage } from './ChatMessage'
 import { ChatPromptBar } from './ChatPromptBar'
 import { streamChat } from '../../lib/sse'
-import { getWorkbench, listConversations, submitFeedback, updateConversation, uploadDocument } from '../../lib/api'
+import { getWorkbench, listConversations, submitFeedback, updateConversation, uploadDocumentStream, deleteDocument, type UploadProgress } from '../../lib/api'
 import type { WorkbenchResponse } from '../../lib/types'
 import { translate as tr } from '../../lib/i18n'
 import { AlertTriangle, ArrowRight, CheckCircle2, Database, Server } from 'lucide-react'
@@ -28,6 +28,7 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
   const [workbench, setWorkbench] = useState<WorkbenchResponse | null>(null)
   const [workbenchError, setWorkbenchError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [attachProgress, setAttachProgress] = useState<UploadProgress | null>(null)
   const [promptId, setPromptId] = useState<string | null>(null)
 
   const showPreview = messages.length === 0 && !isStreaming
@@ -140,13 +141,31 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
 
   const handleAttach = async (file: File) => {
     setUploading(true)
+    setAttachProgress(null)
     useChatStore.getState().setActiveError(null)
     try {
-      await uploadDocument(file)
+      const result = await uploadDocumentStream(file, {
+        onProgress: (progress) => setAttachProgress(progress),
+      })
       await refreshWorkbench()
+      return { id: result.documentId, name: file.name }
     } catch (error) {
       useChatStore.getState().setActiveError(error instanceof Error ? error.message : t('chat.errorUpload'))
       throw error
+    } finally {
+      setUploading(false)
+      setAttachProgress(null)
+    }
+  }
+
+  const handleRemove = async (id: string) => {
+    setUploading(true)
+    useChatStore.getState().setActiveError(null)
+    try {
+      await deleteDocument(id)
+      await refreshWorkbench()
+    } catch (error) {
+      useChatStore.getState().setActiveError(error instanceof Error ? error.message : t('documents.deleteError'))
     } finally {
       setUploading(false)
     }
@@ -265,10 +284,12 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
           <ChatInput
             onSend={handleSend}
             onAttach={compact || !modelReady ? undefined : handleAttach}
+            onRemove={compact || !modelReady ? undefined : handleRemove}
             disabled={isStreaming}
             sendDisabled={!canAsk}
             disabledReason={disabledReason}
             uploading={uploading}
+            attachProgress={attachProgress}
             className={showPreview ? '' : 'mb-7'}
           />
 

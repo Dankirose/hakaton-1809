@@ -6,7 +6,7 @@ export function doctorCommand() {
   return new Command('doctor')
     .description('Run health diagnostics')
     .action(async () => {
-      log.heading('OpenDocuments Health Check')
+      log.heading('Gaprom-cps RAG Health Check')
       let hasIssues = false
 
       try {

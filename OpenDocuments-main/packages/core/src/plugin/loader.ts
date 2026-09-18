@@ -19,7 +19,7 @@ export async function loadPlugin(name: string): Promise<AnyPlugin> {
     const plugin = typeof exported === 'function' ? new exported() : exported
 
     if (!isValidPlugin(plugin)) {
-      throw new Error(`Plugin ${name} does not export a valid OpenDocuments plugin`)
+      throw new Error(`Plugin ${name} does not export a valid Gaprom-cps RAG plugin`)
     }
 
     return plugin as AnyPlugin

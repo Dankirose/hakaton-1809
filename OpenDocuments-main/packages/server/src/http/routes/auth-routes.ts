@@ -173,7 +173,7 @@ export function authRoutes(ctx: AppContext) {
           userId: user.id,
           details: { reason: 'oauth user not allowed', provider },
         })
-        return c.json({ error: 'This account is not allowed to access OpenDocuments' }, 403)
+        return c.json({ error: 'This account is not allowed to access Gaprom-cps RAG' }, 403)
       }
 
       const workspaceName = config.workspace || ctx.config.workspace

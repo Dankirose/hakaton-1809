@@ -52,7 +52,7 @@ export { selectChunkStrategy, dispatchChunk, type ChunkStrategy, type ChunkDispa
 export { MiddlewareRunner } from './ingest/middleware.js'
 export { DocumentStore, type CreateDocumentInput, type StoredChunk, type SearchResult } from './ingest/document-store.js'
 
-export { IngestPipeline, type IngestInput, type IngestResult, type IngestPipelineOptions } from './ingest/pipeline.js'
+export { IngestPipeline, type IngestInput, type IngestResult, type IngestPipelineOptions, type IngestProgress, type IngestStage } from './ingest/pipeline.js'
 
 export { ConnectorManager, type ConnectorSyncResult } from './connector/manager.js'
 

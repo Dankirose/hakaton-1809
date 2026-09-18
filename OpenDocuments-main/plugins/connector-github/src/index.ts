@@ -82,7 +82,7 @@ export class GitHubConnector implements ConnectorPlugin {
   private ghFetch(path: string): Promise<Response> {
     const headers: Record<string, string> = {
       'Accept': 'application/vnd.github.v3+json',
-      'User-Agent': 'OpenDocuments/0.3.0',
+      'User-Agent': 'GapromCpsRAG/0.3.0',
     }
     if (this.token) headers['Authorization'] = `Bearer ${this.token}`
     return fetchWithTimeout(`${this.baseUrl}${path}`, { headers })

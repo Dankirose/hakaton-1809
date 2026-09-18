@@ -109,6 +109,77 @@ export async function uploadDocument(file: File): Promise<{ documentId: string; 
   return res.json()
 }
 
+export interface UploadProgress {
+  stage: 'received' | 'parsed' | 'chunked' | 'embedding' | 'indexed' | 'skipped' | 'error'
+  chunks?: number
+  processed?: number
+  total?: number
+  message?: string
+}
+
+export interface UploadCallbacks {
+  onProgress: (progress: UploadProgress) => void
+}
+
+export async function uploadDocumentStream(
+  file: File,
+  callbacks: UploadCallbacks,
+  signal?: AbortSignal
+): Promise<{ documentId: string; chunks: number; status: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(`${BASE}/documents/upload/stream`, {
+    credentials: 'same-origin',
+    headers: withStoredApiKey(),
+    method: 'POST',
+    body: formData,
+    signal,
+  })
+  if (!res.ok) {
+    throw new ApiError(await errorMessage(res, `Upload failed with HTTP ${res.status}`), res.status)
+  }
+  if (!res.body) throw new ApiError('No response body', res.status)
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  const handleBlock = (block: string): void => {
+    let eventType = ''
+    const dataLines: string[] = []
+    for (const line of block.split('\n')) {
+      if (line.startsWith('event: ')) eventType = line.slice(7).trim()
+      else if (line.startsWith('data: ')) dataLines.push(line.slice(6))
+    }
+    if (!eventType || dataLines.length === 0) return
+    const data = dataLines.join('\n').trim()
+    try {
+      const parsed = JSON.parse(data)
+      if (eventType === 'progress') callbacks.onProgress(parsed as UploadProgress)
+      else if (eventType === 'done') result = parsed as { documentId: string; chunks: number; status: string }
+    } catch {
+      // ignore malformed blocks
+    }
+  }
+
+  let result: { documentId: string; chunks: number; status: string } | null = null
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    let boundary = buffer.indexOf('\n\n')
+    while (boundary >= 0) {
+      const block = buffer.slice(0, boundary)
+      buffer = buffer.slice(boundary + 2)
+      handleBlock(block)
+      boundary = buffer.indexOf('\n\n')
+    }
+  }
+  if (buffer.trim()) handleBlock(buffer)
+
+  return result ?? { documentId: '', chunks: 0, status: 'error' }
+}
+
 // Health
 export async function getHealth(): Promise<{ status: string; version: string }> {
   return request('/health')

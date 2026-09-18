@@ -1,33 +1,63 @@
 import { useState, useRef, useEffect } from 'react'
-import { Paperclip, Send, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Paperclip, Send, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { translate as tr } from '../../lib/i18n'
+import type { UploadProgress } from '../../lib/api'
 
 interface Props {
   onSend: (query: string) => void
-  onAttach?: (file: File) => Promise<void>
+  onAttach?: (file: File) => Promise<{ id: string; name: string }>
+  onRemove?: (id: string) => Promise<void>
   disabled?: boolean
   sendDisabled?: boolean
   disabledReason?: string
   uploading?: boolean
+  attachProgress?: UploadProgress | null
   className?: string
 }
 
 export function ChatInput({
   onSend,
   onAttach,
+  onRemove,
   disabled,
   sendDisabled,
   disabledReason,
   uploading,
+  attachProgress,
   className = '',
 }: Props) {
   const { locale } = useAppStore()
   const t = (key: string, values?: Record<string, string | number>) => tr(locale, key, values)
   const [input, setInput] = useState('')
   const [attachStatus, setAttachStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  const [attachedFile, setAttachedFile] = useState<{ id: string; name: string } | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const stageLabel = (progress: UploadProgress): string => {
+    switch (progress.stage) {
+      case 'received':
+        return t('chat.uploadStage.received')
+      case 'parsed':
+        return t('chat.uploadStage.parsed', { chunks: progress.chunks ?? 0 })
+      case 'chunked':
+        return t('chat.uploadStage.chunked', { chunks: progress.chunks ?? 0 })
+      case 'embedding':
+        return t('chat.uploadStage.embedding', {
+          processed: progress.processed ?? 0,
+          total: progress.total ?? 0,
+        })
+      case 'indexed':
+        return t('chat.uploadStage.indexed', { chunks: progress.chunks ?? 0 })
+      case 'skipped':
+        return t('chat.uploadStage.skipped')
+      case 'error':
+        return t('chat.uploadStage.error')
+      default:
+        return t('chat.uploadingSource')
+    }
+  }
 
   useEffect(() => {
     if (!disabled) textareaRef.current?.focus()
@@ -51,12 +81,24 @@ export function ChatInput({
     if (!file || !onAttach || disabled || uploading) return
     setAttachStatus('uploading')
     try {
-      await onAttach(file)
+      const result = await onAttach(file)
+      setAttachedFile(result)
       setAttachStatus('success')
     } catch {
       setAttachStatus('error')
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemove = async () => {
+    if (!attachedFile || !onRemove) return
+    try {
+      await onRemove(attachedFile.id)
+      setAttachedFile(null)
+      setAttachStatus('idle')
+    } catch {
+      setAttachStatus('error')
     }
   }
 
@@ -106,6 +148,25 @@ export function ChatInput({
                   <Paperclip size={19} strokeWidth={2} />
                 )}
               </button>
+              {attachStatus === 'uploading' && attachProgress && (
+                <span className="ml-2 inline-flex items-center gap-1.5 text-[12px] text-blue-600">
+                  <span>{stageLabel(attachProgress)}</span>
+                </span>
+              )}
+              {attachedFile && (
+                <span className="ml-2 inline-flex max-w-[240px] items-center gap-1 rounded-md bg-slate-50 px-2 py-1 text-[12px] text-slate-600">
+                  <span className="truncate">{attachedFile.name}</span>
+                  <button
+                    type="button"
+                    onClick={handleRemove}
+                    disabled={uploading}
+                    aria-label={t('common.remove')}
+                    className="shrink-0 text-slate-400 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <X size={14} strokeWidth={2} />
+                  </button>
+                </span>
+              )}
             </div>
           ) : <div />}
           <button

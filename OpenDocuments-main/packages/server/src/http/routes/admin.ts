@@ -322,7 +322,7 @@ export function adminRoutes(ctx: AppContext) {
         // Embedding benchmark
         if (model.capabilities.embedding && model.embed) {
           try {
-            const testTexts = ['The quick brown fox jumps over the lazy dog.', 'OpenDocuments is a self-hosted RAG platform.']
+            const testTexts = ['The quick brown fox jumps over the lazy dog.', 'Gaprom-cps RAG is a self-hosted RAG platform.']
             const start = performance.now()
             await model.embed(testTexts)
             const latencyMs = performance.now() - start

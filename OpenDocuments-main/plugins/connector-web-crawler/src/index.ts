@@ -55,7 +55,7 @@ export class WebCrawlerConnector implements ConnectorPlugin {
   private async discoverLinks(url: string, seedOrigin: string): Promise<string[]> {
     try {
       const res = await fetchWithTimeout(url, {
-        headers: { 'User-Agent': 'OpenDocuments/0.3.0', ...this.headers },
+        headers: { 'User-Agent': 'GapromcpsRAG/0.3.0', ...this.headers },
       })
       if (!res.ok) return []
       const html = await res.text()
@@ -82,7 +82,7 @@ export class WebCrawlerConnector implements ConnectorPlugin {
 
   async fetch(ref: DocumentRef): Promise<RawDocument> {
     const res = await fetchWithTimeout(ref.sourcePath, {
-      headers: { 'User-Agent': 'OpenDocuments/0.3.0', ...this.headers },
+      headers: { 'User-Agent': 'GapromcpsRAG/0.3.0', ...this.headers },
     })
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${ref.sourcePath}`)
 

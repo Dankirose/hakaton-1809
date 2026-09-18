@@ -27,7 +27,7 @@ import { resetIndexCommand } from './commands/reset-index.js'
 const program = new Command()
 program
   .name('opendocuments')
-  .description('OpenDocuments - Self-hosted RAG platform for organizational documents')
+  .description('Gaprom-cps RAG - Self-hosted RAG platform for organizational documents')
   .version(version)
 
 program.addCommand(startCommand())

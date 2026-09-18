@@ -70,7 +70,7 @@ function instantiatePlugin<T extends AnyPlugin>(mod: Record<string, unknown>, pa
   if (typeof PluginClass === 'function') {
     return new (PluginClass as new () => T)()
   }
-  throw new Error(`Plugin ${packageName} does not export a valid OpenDocuments plugin`)
+  throw new Error(`Plugin ${packageName} does not export a valid Gaprom-cps RAG plugin`)
 }
 
 /* ------------------------------------------------------------------ */
@@ -581,7 +581,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
             code: 'model_unavailable',
             message: 'The configured generation or embedding model is unavailable.',
             action: config.model.provider === 'ollama'
-              ? `Run "ollama serve", then pull "${config.model.llm}" and "${config.model.embedding}", and restart OpenDocuments.`
+              ? `Run "ollama serve", then pull "${config.model.llm}" and "${config.model.embedding}", and restart Gaprom-cps RAG.`
               : `Verify the ${config.model.provider} API key and run "opendocuments doctor".`,
           }]
         : [],

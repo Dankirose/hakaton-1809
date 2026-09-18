@@ -30,6 +30,23 @@ export interface IngestResult {
   status: 'indexed' | 'skipped' | 'error'
 }
 
+export type IngestStage =
+  | 'received'
+  | 'parsed'
+  | 'chunked'
+  | 'embedding'
+  | 'indexed'
+  | 'skipped'
+  | 'error'
+
+export interface IngestProgress {
+  stage: IngestStage
+  chunks?: number
+  processed?: number
+  total?: number
+  message?: string
+}
+
 export interface IngestPipelineOptions {
   store: DocumentStore
   registry: PluginRegistry
@@ -93,9 +110,15 @@ export class IngestPipeline {
 
   async ingest(
     input: IngestInput,
-    options: { contextualRetrieval?: boolean; chunkAugmentation?: boolean; force?: boolean } = {}
+    options: {
+      contextualRetrieval?: boolean
+      chunkAugmentation?: boolean
+      force?: boolean
+      onProgress?: (progress: IngestProgress) => void
+    } = {}
   ): Promise<IngestResult> {
     const { store, registry, eventBus, middleware } = this.opts
+    const emit = options.onProgress
     const contentHash = sha256(input.content)
     const fileType = input.fileType ?? extname(input.sourcePath)
     let documentId: string
@@ -105,6 +128,7 @@ export class IngestPipeline {
     if (existing) {
       if (!options.force && !store.hasContentChanged(existing.id, contentHash)) {
         if (input.sourceVersion) store.updateSourceVersion(existing.id, input.sourceVersion)
+        emit?.({ stage: 'skipped', chunks: existing.chunk_count ?? 0 })
         return { documentId: existing.id, chunks: existing.chunk_count ?? 0, status: 'skipped' }
       }
       documentId = existing.id
@@ -137,6 +161,7 @@ export class IngestPipeline {
       }
 
       eventBus.emit('document:fetched', { documentId })
+      emit?.({ stage: 'received', message: input.title })
 
       // Apply before:parse middleware
       await middleware.run('before:parse', rawDoc)
@@ -155,6 +180,7 @@ export class IngestPipeline {
       }
 
       eventBus.emit('document:parsed', { documentId, chunks: parsedChunks.length })
+      emit?.({ stage: 'parsed', chunks: parsedChunks.length })
 
       // Apply before:chunk middleware
       await middleware.run('before:chunk', parsedChunks)
@@ -201,6 +227,7 @@ export class IngestPipeline {
       await middleware.run('after:chunk', finalChunks)
 
       eventBus.emit('document:chunked', { documentId, chunks: finalChunks.length })
+      emit?.({ stage: 'chunked', chunks: finalChunks.length })
 
       // Contextual Retrieval: let an LLM author a 1-2-sentence situating prefix per chunk.
       // We embed `${prefix}\n\n${content}` but keep raw content for later generation.
@@ -272,6 +299,7 @@ export class IngestPipeline {
         c.contextualPrefix ? `${c.contextualPrefix}\n\n${c.content}` : c.content
       )
       const allEmbeddings: number[][] = []
+      emit?.({ stage: 'embedding', processed: 0, total: texts.length })
 
       let expectedDim: number | null = null
       for (let i = 0; i < texts.length; i += BATCH_SIZE) {
@@ -293,6 +321,7 @@ export class IngestPipeline {
           }
         }
         allEmbeddings.push(...result.dense)
+        emit?.({ stage: 'embedding', processed: Math.min(i + BATCH_SIZE, texts.length), total: texts.length })
       }
 
       // Assign embeddings to chunks
@@ -326,12 +355,14 @@ export class IngestPipeline {
       }
 
       eventBus.emit('document:indexed', { documentId, chunks: chunksWithEmbeddings.length })
+      emit?.({ stage: 'indexed', chunks: chunksWithEmbeddings.length })
 
       return { documentId, chunks: chunksWithEmbeddings.length, status: 'indexed' }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       store.updateStatus(documentId, 'error', message)
       eventBus.emit('document:error', { documentId, error: message })
+      emit?.({ stage: 'error', message })
       return { documentId, chunks: 0, status: 'error' }
     }
   }

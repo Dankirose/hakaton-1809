@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { streamSSE } from 'hono/streaming'
 import type { AppContext } from '../../bootstrap.js'
 import { getWorkspaceServices } from '../workspace.js'
 import { requireScope } from '../middleware/auth.js'
@@ -103,6 +104,51 @@ export function documentRoutes(ctx: AppContext) {
       fileType: sanitizedName.includes('.') ? '.' + sanitizedName.split('.').pop() : undefined,
     })
     return c.json(result, 201)
+  })
+
+  app.post('/api/v1/documents/upload/stream', requireScope('document:write'), async (c) => {
+    const body = await c.req.parseBody()
+    const file = body['file']
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: 'No file provided' }, 400)
+    }
+
+    const MAX_FILE_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_FILE_SIZE) {
+      return c.json({ error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB (max 50MB)` }, 413)
+    }
+
+    const basename = file.name.split(/[/\\]/).pop() || ''
+    const sanitizedName = basename
+      .replace(/\.\./g, '_')
+      .replace(/[<>:"|?*]/g, '_')
+      .trim()
+    if (!sanitizedName || sanitizedName.length === 0) {
+      return c.json({ error: 'Invalid filename' }, 400)
+    }
+
+    const textExtensions = ['.md', '.mdx', '.txt', '.json', '.yaml', '.yml', '.toml', '.csv', '.html', '.htm']
+    const ext = '.' + (sanitizedName.split('.').pop() || '')
+    const content = textExtensions.includes(ext)
+      ? await file.text()
+      : Buffer.from(await file.arrayBuffer())
+    const uploadHash = createHash('sha256').update(content).digest('hex').slice(0, 16)
+    const { pipeline } = getWorkspaceServices(c, ctx)
+
+    return streamSSE(c, async (stream) => {
+      const result = await pipeline.ingest({
+        title: sanitizedName,
+        content,
+        sourceType: 'upload',
+        sourcePath: `upload:${uploadHash}:${sanitizedName}`,
+        fileType: sanitizedName.includes('.') ? '.' + sanitizedName.split('.').pop() : undefined,
+      }, {
+        onProgress: (progress) => {
+          void stream.writeSSE({ event: 'progress', data: JSON.stringify(progress) })
+        },
+      })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify(result) })
+    })
   })
 
   return app
