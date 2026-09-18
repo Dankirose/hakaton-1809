@@ -1,0 +1,123 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { bootstrap, type AppContext } from '../../src/bootstrap.js'
+import { createApp } from '../../src/http/app.js'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
+
+describe('Chat Routes', () => {
+  let ctx: AppContext
+  let app: ReturnType<typeof createApp>
+  let tempDir: string
+  const stubModel = {
+    provider: 'stub',
+    llm: 'stub-llm',
+    embedding: 'stub-embedding',
+    apiKey: '',
+    baseUrl: '',
+    embeddingDimensions: 384,
+  } as any
+
+  beforeEach(async () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'opendocuments-test-'))
+    ctx = await bootstrap({ dataDir: tempDir, configOverrides: { model: stubModel } })
+    ctx.readiness.modelStatus = 'ready'
+    ctx.readiness.issues = []
+    const workspaceId = ctx.workspaceManager.list()[0].id
+    ctx.db.run(
+      `INSERT INTO documents
+       (id, workspace_id, title, source_type, source_path, chunk_count, status)
+       VALUES ('ready-doc', ?, 'Ready', 'local', '/ready.md', 1, 'indexed')`,
+      [workspaceId]
+    )
+    app = createApp(ctx)
+  })
+  afterEach(async () => { await ctx.shutdown(); rmSync(tempDir, { recursive: true, force: true }) })
+
+  it('POST /api/v1/chat returns an answer', async () => {
+    const res = await app.request('/api/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Hello' }),
+    })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.answer).toBeDefined()
+    expect(body.route).toBe('direct')
+  })
+
+  it('POST /api/v1/chat returns 400 without query', async () => {
+    const res = await app.request('/api/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    expect(res.status).toBe(400)
+  })
+
+  it('blocks chat with an actionable response when the model is unavailable', async () => {
+    ctx.readiness.modelStatus = 'degraded'
+    ctx.readiness.issues = [{
+      code: 'model_unavailable',
+      message: 'Model unavailable',
+      action: 'Run opendocuments doctor',
+    }]
+    const res = await app.request('/api/v1/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Hello' }),
+    })
+
+    expect(res.status).toBe(503)
+    expect(await res.json()).toMatchObject({
+      code: 'MODEL_UNAVAILABLE',
+      action: 'Run opendocuments doctor',
+    })
+  })
+
+  it('POST /api/v1/chat/stream returns SSE', async () => {
+    const res = await app.request('/api/v1/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Hello' }),
+    })
+    expect(res.status).toBe(200)
+    expect(res.headers.get('content-type')).toContain('text/event-stream')
+  })
+
+  it('POST /api/v1/chat/stream records query logs for streamed chats', async () => {
+    const res = await app.request('/api/v1/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Hello' }),
+    })
+
+    expect(res.status).toBe(200)
+    await res.text()
+
+    const row = ctx.db.get<{ count: number }>('SELECT COUNT(*) as count FROM query_logs WHERE query = ?', ['Hello'])
+    expect(row?.count).toBe(1)
+  })
+
+  it('POST /api/v1/chat/stream returns conversationId for newly persisted conversations', async () => {
+    const res = await app.request('/api/v1/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'Hello' }),
+    })
+
+    expect(res.status).toBe(200)
+    const text = await res.text()
+    const doneLine = text.split('\n').find((line) => line.startsWith('data: ') && line.includes('"conversationId"'))
+    expect(doneLine).toBeDefined()
+
+    const doneData = JSON.parse(doneLine!.slice('data: '.length))
+    expect(doneData.conversationId).toEqual(expect.any(String))
+
+    const row = ctx.db.get<{ count: number }>(
+      'SELECT COUNT(*) as count FROM conversations WHERE id = ?',
+      [doneData.conversationId]
+    )
+    expect(row?.count).toBe(1)
+  })
+})
