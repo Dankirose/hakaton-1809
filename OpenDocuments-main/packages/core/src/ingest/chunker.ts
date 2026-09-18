@@ -368,14 +368,32 @@ function extractHeadingMap(text: string, sentences: string[]): Map<number, strin
   return headingMap
 }
 
+const MAX_SENTENCE_CHARS = 1024
+
 function splitIntoSentences(text: string): string[] {
   const sentences: string[] = []
   let start = 0
-  const boundary = /[.!?。！？]/u
+  // `;` is a sentence boundary for prose (e.g. semicolon-delimited duty lists in
+  // legacy `.doc` files), but NOT for code. Code never reaches this path.
+  const boundary = /[.!?;。！？；]/u
 
   for (let i = 0; i < text.length; i++) {
-    if (!boundary.test(text[i])) continue
     const char = text[i]
+    if (!boundary.test(char)) {
+      // Hard cap: split oversized sentences on the nearest whitespace so the
+      // embedder never receives an unbounded chunk.
+      if (i - start >= MAX_SENTENCE_CHARS) {
+        let cut = i
+        while (cut > start && !/\s/u.test(text[cut])) cut--
+        if (cut <= start) cut = i
+        const sentence = text.slice(start, cut).trim()
+        if (sentence) sentences.push(sentence)
+        start = cut
+        while (start < text.length && /\s/u.test(text[start])) start++
+        i = start - 1
+      }
+      continue
+    }
     const prev = text[i - 1] || ''
     const next = text[i + 1] || ''
     const afterNextNonSpace = text.slice(i + 1).match(/\S/)?.[0] || ''
