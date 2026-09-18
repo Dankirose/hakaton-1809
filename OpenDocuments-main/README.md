@@ -495,7 +495,7 @@ export default defineConfig({
   model: {
     provider: 'ollama',
     llm: 'qwen3.5:27b',
-    embedding: 'bge-m3',
+    embedding: 'qwen3-embedding:0.6b',
   },
 
   rag: { profile: 'balanced' },

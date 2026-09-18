@@ -14,7 +14,7 @@ export default defineConfig({
   model: {
     provider: 'ollama',     // 'ollama' | 'openai' | 'anthropic' | 'google' | 'grok'
     llm: 'qwen2.5:14b',
-    embedding: 'bge-m3',
+    embedding: 'qwen3-embedding:0.6b',
     // embeddingProvider: 'openai',    // Use different provider for embeddings
     // apiKey: process.env.OPENAI_API_KEY,
     // baseUrl: 'http://localhost:11434',
@@ -81,7 +81,7 @@ export default defineConfig({
 model: {
   provider: 'ollama',
   llm: 'qwen2.5:14b',      // Any Ollama model
-  embedding: 'bge-m3',
+  embedding: 'qwen3-embedding:0.6b',
   baseUrl: 'http://localhost:11434',  // Default
 }
 ```
@@ -101,7 +101,7 @@ model: {
 model: {
   provider: 'anthropic',
   llm: 'claude-sonnet-4-20250514',
-  embedding: 'bge-m3',
+  embedding: 'qwen3-embedding:0.6b',
   embeddingProvider: 'ollama',
   apiKey: process.env.ANTHROPIC_API_KEY,
 }

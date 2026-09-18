@@ -51,7 +51,7 @@ export function recommendModels(hw: HardwareInfo): ModelRecommendation {
   if (availableGB >= 24) {
     return {
       llm: 'qwen2.5:32b',
-      embedding: 'bge-m3',
+      embedding: 'qwen3-embedding:0.6b',
       reason: `${availableGB.toFixed(1)} GB available — sufficient for a 32B parameter model with high-quality multilingual embeddings.`,
     }
   }
@@ -59,7 +59,7 @@ export function recommendModels(hw: HardwareInfo): ModelRecommendation {
   if (availableGB >= 12) {
     return {
       llm: 'qwen2.5:14b',
-      embedding: 'bge-m3',
+      embedding: 'qwen3-embedding:0.6b',
       reason: `${availableGB.toFixed(1)} GB available — suitable for a 14B parameter model with high-quality multilingual embeddings.`,
     }
   }
@@ -67,7 +67,7 @@ export function recommendModels(hw: HardwareInfo): ModelRecommendation {
   if (availableGB >= 6) {
     return {
       llm: 'qwen2.5:7b',
-      embedding: 'bge-m3',
+      embedding: 'qwen3-embedding:0.6b',
       reason: `${availableGB.toFixed(1)} GB available — suitable for a 7B parameter model with high-quality multilingual embeddings.`,
     }
   }
