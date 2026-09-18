@@ -1034,9 +1034,9 @@ const ru: Dictionary = {
   'chat.corpusReady': 'Доступно документов для поиска: {count}.',
   'chat.inspectSettings': 'Проверить',
   'chat.manageSources': 'Добавить источники',
-  'chat.suggestion.summary': 'Обобщите самые важные документы этого рабочего пространства.',
-  'chat.suggestion.deployment': 'Какой источник описывает текущий процесс развёртывания?',
-  'chat.suggestion.authentication': 'Найдите политику или заметки об архитектуре, связанные с аутентификацией.',
+  'chat.suggestion.summary': 'Обобщите ключевые документы и регламенты этого рабочего пространства.',
+  'chat.suggestion.deployment': 'Найдите должностные инструкции и обязанности по выбранной должности.',
+  'chat.suggestion.authentication': 'Какие документы регулируют приём и адаптацию сотрудников?',
 
   'prompts.title': 'Промпты чата',
   'prompts.selector': 'Активный промпт',
