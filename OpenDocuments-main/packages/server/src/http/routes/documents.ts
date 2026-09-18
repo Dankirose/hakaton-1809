@@ -1,0 +1,155 @@
+import { Hono } from 'hono'
+import { streamSSE } from 'hono/streaming'
+import type { AppContext } from '../../bootstrap.js'
+import { getWorkspaceServices } from '../workspace.js'
+import { requireScope } from '../middleware/auth.js'
+import { createHash } from 'node:crypto'
+
+export function documentRoutes(ctx: AppContext) {
+  const app = new Hono()
+
+  app.get('/api/v1/documents', requireScope('document:read'), (c) => {
+    const { store } = getWorkspaceServices(c, ctx)
+    return c.json({ documents: store.listDocuments() })
+  })
+
+  // List deleted documents (trash)
+  app.get('/api/v1/documents/trash', requireScope('document:read'), (c) => {
+    const { store } = getWorkspaceServices(c, ctx)
+    const docs = store.listDeletedDocuments()
+    return c.json({ documents: docs })
+  })
+
+  // Compare two arbitrary documents (their active/latest versions). Registered
+  // before the `:id` route so "compare" is not parsed as a document id.
+  app.get('/api/v1/documents/compare', requireScope('document:read'), (c) => {
+    const { store, versionManager } = getWorkspaceServices(c, ctx)
+    const left = c.req.query('left')
+    const right = c.req.query('right')
+    if (!left || !right) return c.json({ error: 'Both "left" and "right" document ids are required' }, 400)
+    if (left === right) return c.json({ error: 'Cannot compare a document with itself' }, 400)
+    if (!store.getDocument(left) || !store.getDocument(right)) {
+      return c.json({ error: 'Document not found' }, 404)
+    }
+
+    const comparison = versionManager.compareDocuments(left, right)
+    if (!comparison) return c.json({ error: 'No recorded version to compare' }, 404)
+    return c.json(comparison)
+  })
+
+  // Restore a deleted document
+  app.post('/api/v1/documents/:id/restore', requireScope('document:write'), (c) => {
+    const { store } = getWorkspaceServices(c, ctx)
+    const id = c.req.param('id')
+    if (!id) return c.json({ error: 'Document id required' }, 400)
+    store.restoreDocument(id)
+    return c.json({ restored: true })
+  })
+
+  app.get('/api/v1/documents/:id', requireScope('document:read'), (c) => {
+    const { store } = getWorkspaceServices(c, ctx)
+    const id = c.req.param('id')
+    if (!id) return c.json({ error: 'Document id required' }, 400)
+    const doc = store.getDocument(id)
+    if (!doc) return c.json({ error: 'Document not found' }, 404)
+    return c.json(doc)
+  })
+
+  app.delete('/api/v1/documents/:id', requireScope('document:write'), async (c) => {
+    const { store } = getWorkspaceServices(c, ctx)
+    const id = c.req.param('id')
+    if (!id) return c.json({ error: 'Document id required' }, 400)
+    const doc = store.getDocument(id)
+    if (!doc) return c.json({ error: 'Document not found' }, 404)
+    await store.softDeleteDocument(id)
+    return c.json({ deleted: true })
+  })
+
+  app.post('/api/v1/documents/upload', requireScope('document:write'), async (c) => {
+    const body = await c.req.parseBody()
+    const file = body['file']
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: 'No file provided' }, 400)
+    }
+
+    // File size validation (50MB max)
+    const MAX_FILE_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_FILE_SIZE) {
+      return c.json({ error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB (max 50MB)` }, 413)
+    }
+
+    // Filename sanitization: strip paths and dangerous characters
+    const basename = file.name.split(/[/\\]/).pop() || ''
+    const sanitizedName = basename
+      .replace(/\.\./g, '_')
+      .replace(/[<>:"|?*]/g, '_')
+      .trim()
+    if (!sanitizedName || sanitizedName.length === 0) {
+      return c.json({ error: 'Invalid filename' }, 400)
+    }
+
+    // Read as buffer for binary files, text for known text formats
+    const textExtensions = ['.md', '.mdx', '.txt', '.json', '.yaml', '.yml', '.toml', '.csv', '.html', '.htm']
+    const ext = '.' + (sanitizedName.split('.').pop() || '')
+    const content = textExtensions.includes(ext)
+      ? await file.text()
+      : Buffer.from(await file.arrayBuffer())
+    const uploadHash = createHash('sha256').update(content).digest('hex').slice(0, 16)
+    const { pipeline } = getWorkspaceServices(c, ctx)
+    const result = await pipeline.ingest({
+      title: sanitizedName,
+      content,
+      sourceType: 'upload',
+      sourcePath: `upload:${uploadHash}:${sanitizedName}`,
+      fileType: sanitizedName.includes('.') ? '.' + sanitizedName.split('.').pop() : undefined,
+    })
+    return c.json(result, 201)
+  })
+
+  app.post('/api/v1/documents/upload/stream', requireScope('document:write'), async (c) => {
+    const body = await c.req.parseBody()
+    const file = body['file']
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: 'No file provided' }, 400)
+    }
+
+    const MAX_FILE_SIZE = 50 * 1024 * 1024
+    if (file.size > MAX_FILE_SIZE) {
+      return c.json({ error: `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB (max 50MB)` }, 413)
+    }
+
+    const basename = file.name.split(/[/\\]/).pop() || ''
+    const sanitizedName = basename
+      .replace(/\.\./g, '_')
+      .replace(/[<>:"|?*]/g, '_')
+      .trim()
+    if (!sanitizedName || sanitizedName.length === 0) {
+      return c.json({ error: 'Invalid filename' }, 400)
+    }
+
+    const textExtensions = ['.md', '.mdx', '.txt', '.json', '.yaml', '.yml', '.toml', '.csv', '.html', '.htm']
+    const ext = '.' + (sanitizedName.split('.').pop() || '')
+    const content = textExtensions.includes(ext)
+      ? await file.text()
+      : Buffer.from(await file.arrayBuffer())
+    const uploadHash = createHash('sha256').update(content).digest('hex').slice(0, 16)
+    const { pipeline } = getWorkspaceServices(c, ctx)
+
+    return streamSSE(c, async (stream) => {
+      const result = await pipeline.ingest({
+        title: sanitizedName,
+        content,
+        sourceType: 'upload',
+        sourcePath: `upload:${uploadHash}:${sanitizedName}`,
+        fileType: sanitizedName.includes('.') ? '.' + sanitizedName.split('.').pop() : undefined,
+      }, {
+        onProgress: (progress) => {
+          void stream.writeSSE({ event: 'progress', data: JSON.stringify(progress) })
+        },
+      })
+      await stream.writeSSE({ event: 'done', data: JSON.stringify(result) })
+    })
+  })
+
+  return app
+}

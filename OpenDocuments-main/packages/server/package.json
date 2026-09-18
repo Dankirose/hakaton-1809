@@ -1,0 +1,63 @@
+{
+  "name": "opendocuments-server",
+  "version": "0.3.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.12",
+    "@modelcontextprotocol/server": "2.0.0-beta.5",
+    "hono": "^4.6.0",
+    "opendocuments-core": "*"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.0.0-beta.5",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.10"
+  },
+  "description": "HTTP API and MCP server for OpenDocuments self-hosted AI document search",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joungminsung/OpenDocuments.git",
+    "directory": "packages/server"
+  },
+  "keywords": [
+    "opendocuments",
+    "rag",
+    "retrieval-augmented-generation",
+    "ai",
+    "llm",
+    "document-search",
+    "knowledge-base",
+    "self-hosted",
+    "mcp",
+    "hono",
+    "api-server",
+    "http-api",
+    "claude-code",
+    "cursor"
+  ],
+  "files": [
+    "dist/**/*"
+  ],
+  "homepage": "https://github.com/joungminsung/OpenDocuments#readme",
+  "bugs": {
+    "url": "https://github.com/joungminsung/OpenDocuments/issues"
+  },
+  "author": "OpenDocuments Contributors"
+}

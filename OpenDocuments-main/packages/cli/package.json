@@ -1,0 +1,80 @@
+{
+  "name": "opendocuments",
+  "version": "0.3.0",
+  "type": "module",
+  "bin": {
+    "opendocuments": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-web.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.12",
+    "@inquirer/prompts": "^8.3.2",
+    "@opendocuments/connector-confluence": "*",
+    "@opendocuments/connector-gdrive": "*",
+    "@opendocuments/connector-github": "*",
+    "@opendocuments/connector-notion": "*",
+    "@opendocuments/connector-s3": "*",
+    "@opendocuments/connector-swagger": "*",
+    "@opendocuments/connector-web-crawler": "*",
+    "@opendocuments/connector-web-search": "*",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "opendocuments-core": "*",
+    "opendocuments-model-anthropic": "*",
+    "opendocuments-model-google": "*",
+    "opendocuments-model-grok": "*",
+    "opendocuments-model-ollama": "*",
+    "opendocuments-model-openai": "*",
+    "opendocuments-parser-code": "*",
+    "opendocuments-parser-docx": "*",
+    "opendocuments-parser-email": "*",
+    "opendocuments-parser-html": "*",
+    "opendocuments-parser-jupyter": "*",
+    "opendocuments-parser-pdf": "*",
+    "opendocuments-parser-pptx": "*",
+    "opendocuments-parser-xlsx": "*",
+    "opendocuments-server": "*"
+  },
+  "devDependencies": {
+    "@opendocuments/web": "*",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.10"
+  },
+  "description": "CLI and server for OpenDocuments, a self-hosted RAG platform for AI document search with source citations",
+  "homepage": "https://github.com/joungminsung/OpenDocuments",
+  "bugs": {
+    "url": "https://github.com/joungminsung/OpenDocuments/issues"
+  },
+  "author": "OpenDocuments Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joungminsung/OpenDocuments.git",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "opendocuments",
+    "rag",
+    "retrieval-augmented-generation",
+    "ai",
+    "llm",
+    "document-search",
+    "knowledge-base",
+    "self-hosted",
+    "cli",
+    "mcp",
+    "ollama",
+    "enterprise-search",
+    "semantic-search"
+  ],
+  "files": [
+    "dist/**/*",
+    "web-dist/**/*"
+  ]
+}

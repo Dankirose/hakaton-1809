@@ -1,0 +1,37 @@
+services:
+  opendocuments:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${OPENDOCUMENTS_PORT:-3333}:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - opendocuments-data:/data
+      - ./docker/hahtn/opendocuments.config.ts:/app/opendocuments.config.ts:ro
+      - ./docs-lna:/demo-docs:ro
+      - ./docker/hahtn/entrypoint.sh:/app/docker-entrypoint-hahtn.sh:ro
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      OPENDOCUMENTS_DATA_DIR: /data
+      OPENDOCUMENTS_AUTO_INDEX: "${OPENDOCUMENTS_AUTO_INDEX:-true}"
+      OPENDOCUMENTS_MODEL_PROVIDER: "${OPENDOCUMENTS_MODEL_PROVIDER:-ollama}"
+      OPENDOCUMENTS_MODEL_LLM: "${OPENDOCUMENTS_MODEL_LLM:-qwen3.5:cloud}"
+      OPENDOCUMENTS_MODEL_EMBEDDING: "${OPENDOCUMENTS_MODEL_EMBEDDING:-qwen3-embedding:0.6b}"
+      OPENDOCUMENTS_MODEL_BASE_URL: "${OPENDOCUMENTS_MODEL_BASE_URL:-http://host.docker.internal:11434}"
+      OPENDOCUMENTS_MODEL_EMBEDDING_DIMENSIONS: "${OPENDOCUMENTS_MODEL_EMBEDDING_DIMENSIONS:-1024}"
+      OPENDOCUMENTS_MODEL_API_KEY: "${OPENDOCUMENTS_MODEL_API_KEY:-}"
+      OPENDOCUMENTS_RAG_PROFILE: "${OPENDOCUMENTS_RAG_PROFILE:-balanced}"
+    command: ["sh", "/app/docker-entrypoint-hahtn.sh"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+
+volumes:
+  opendocuments-data:
