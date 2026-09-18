@@ -1,0 +1,56 @@
+{
+  "name": "opendocuments-parser-doc",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "opendocuments-core": "^0.3.0",
+    "word-extractor": "^1.0.4"
+  },
+  "devDependencies": {
+    "@types/word-extractor": "^1.0.6",
+    "typescript": "^5.5.0",
+    "vitest": "^4.1.10"
+  },
+  "peerDependencies": {
+    "opendocuments-core": "^0.3.0"
+  },
+  "license": "MIT",
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joungminsung/OpenDocuments.git",
+    "directory": "plugins/parser-doc"
+  },
+  "description": "Legacy Word (.doc) parser for OpenDocuments AI document search",
+  "keywords": [
+    "opendocuments",
+    "rag",
+    "retrieval-augmented-generation",
+    "ai",
+    "llm",
+    "document-search",
+    "knowledge-base",
+    "self-hosted",
+    "parser",
+    "doc",
+    "word",
+    "document-parser"
+  ],
+  "author": "OpenDocuments Contributors"
+}

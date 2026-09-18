@@ -5,6 +5,7 @@ export const ragProfileSchema = z.enum(['fast', 'balanced', 'precise', 'custom']
 export const DEFAULT_PARSER_PLUGINS = [
   'opendocuments-parser-pdf',
   'opendocuments-parser-docx',
+  'opendocuments-parser-doc',
   'opendocuments-parser-xlsx',
   'opendocuments-parser-html',
   'opendocuments-parser-jupyter',

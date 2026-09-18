@@ -429,8 +429,8 @@ function detectSystem(): SystemSpecs {
 
 const PRESET_PLUGINS: Record<string, string[]> = {
   developer: ['opendocuments-parser-code'],
-  enterprise: ['opendocuments-parser-pdf', 'opendocuments-parser-docx', 'opendocuments-parser-xlsx'],
-  all: ['opendocuments-parser-pdf', 'opendocuments-parser-docx', 'opendocuments-parser-xlsx', 'opendocuments-parser-html', 'opendocuments-parser-jupyter', 'opendocuments-parser-email', 'opendocuments-parser-code', 'opendocuments-parser-pptx'],
+  enterprise: ['opendocuments-parser-pdf', 'opendocuments-parser-docx', 'opendocuments-parser-doc', 'opendocuments-parser-xlsx'],
+  all: ['opendocuments-parser-pdf', 'opendocuments-parser-docx', 'opendocuments-parser-doc', 'opendocuments-parser-xlsx', 'opendocuments-parser-html', 'opendocuments-parser-jupyter', 'opendocuments-parser-email', 'opendocuments-parser-code', 'opendocuments-parser-pptx'],
 }
 
 interface ConfigOptions {

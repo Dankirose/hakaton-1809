@@ -5,7 +5,7 @@ export const SUPPORTED_EXTENSIONS = new Set([
   '.md', '.mdx', '.txt',          // built-in
   '.json', '.yaml', '.yml', '.toml', // structured data parsers
   '.zip',                          // archive parser
-  '.pdf', '.docx', '.pptx',        // document parsers
+  '.pdf', '.docx', '.doc', '.pptx', // document parsers
   '.xlsx', '.csv',                 // spreadsheet parsers
   '.html', '.htm',                 // HTML parser
   '.ipynb',                        // Jupyter parser
