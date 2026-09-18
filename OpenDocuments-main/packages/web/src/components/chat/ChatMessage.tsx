@@ -16,6 +16,7 @@ export function ChatMessage({ message, isStreaming, onFeedback }: Props) {
   const { locale } = useAppStore()
   const t = (key: string, values?: Record<string, string | number>) => tr(locale, key, values)
   const [selectedSource, setSelectedSource] = useState<SearchResult | null>(null)
+  const [feedback, setFeedback] = useState<'positive' | 'negative' | null>(null)
   const isUser = message.role === 'user'
   const visibleSources = message.sources?.slice(0, 4) || []
   const confidence = message.confidence?.score
@@ -82,14 +83,28 @@ export function ChatMessage({ message, isStreaming, onFeedback }: Props) {
             {!isStreaming && onFeedback && (
               <div className="mt-4 flex gap-2">
                 <button
-                  onClick={() => onFeedback?.('positive')}
-                  className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                  onClick={() => {
+                    setFeedback('positive')
+                    onFeedback?.('positive')
+                  }}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    feedback === 'positive'
+                      ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                      : 'border-slate-200 text-slate-500 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700'
+                  }`}
                 >
                   {t('chat.helpful')}
                 </button>
                 <button
-                  onClick={() => onFeedback?.('negative')}
-                  className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => {
+                    setFeedback('negative')
+                    onFeedback?.('negative')
+                  }}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    feedback === 'negative'
+                      ? 'border-red-300 bg-red-50 text-red-700'
+                      : 'border-slate-200 text-slate-500 hover:border-red-200 hover:bg-red-50 hover:text-red-700'
+                  }`}
                 >
                   {t('chat.notUseful')}
                 </button>
