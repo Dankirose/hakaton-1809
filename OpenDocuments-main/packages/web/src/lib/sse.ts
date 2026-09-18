@@ -9,18 +9,30 @@ export interface SSECallbacks {
   onError: (error: string) => void
 }
 
+export interface StreamChatOptions {
+  promptId?: string
+  systemPrompt?: string
+}
+
 export async function streamChat(
   query: string,
   profile: string | undefined,
   conversationId: string | null | undefined,
   callbacks: SSECallbacks,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  opts?: StreamChatOptions
 ): Promise<void> {
   const res = await fetch('/api/v1/chat/stream', {
     method: 'POST',
     credentials: 'same-origin',
     headers: withStoredApiKey({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ query, profile, conversationId: conversationId || undefined }),
+    body: JSON.stringify({
+      query,
+      profile,
+      conversationId: conversationId || undefined,
+      promptId: opts?.promptId,
+      systemPrompt: opts?.systemPrompt,
+    }),
     signal,
   })
 

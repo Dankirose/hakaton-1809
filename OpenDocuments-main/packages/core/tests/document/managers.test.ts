@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { DocumentVersionManager } from '../../src/document/version-manager.js'
 import { TagManager } from '../../src/document/tag-manager.js'
 import { CollectionManager } from '../../src/document/collection-manager.js'
+import { ChatPromptManager } from '../../src/document/chat-prompt-manager.js'
 import { ChunkRelationManager } from '../../src/document/chunk-relations.js'
 import { createSQLiteDB } from '../../src/storage/sqlite.js'
 import { runMigrations } from '../../src/storage/migrations/runner.js'
@@ -191,6 +192,49 @@ describe('Document Managers', () => {
 
       ws1.delete(foreignCollection.id)
       expect(ws2.list()).toHaveLength(1)
+    })
+  })
+
+  describe('ChatPromptManager', () => {
+    it('creates, lists, updates and deletes prompts', () => {
+      const mgr = new ChatPromptManager(db, 'ws-1')
+      const created = mgr.create({ name: 'Summary', description: 'Doc summary', content: '# Role\nYou are a summarizer.' })
+      expect(created.id).toBeDefined()
+      expect(mgr.list()).toHaveLength(1)
+
+      const updated = mgr.update(created.id, { name: 'Renamed', content: '# Role\nNew content.' })
+      expect(updated?.name).toBe('Renamed')
+      expect(updated?.content).toContain('New content')
+      expect(updated?.description).toBe('Doc summary')
+
+      expect(mgr.get(created.id)?.name).toBe('Renamed')
+      expect(mgr.delete(created.id)).toBe(true)
+      expect(mgr.list()).toHaveLength(0)
+    })
+
+    it('clears description with explicit null', () => {
+      const mgr = new ChatPromptManager(db, 'ws-1')
+      const created = mgr.create({ name: 'P', description: 'desc', content: 'c' })
+      const updated = mgr.update(created.id, { description: null })
+      expect(updated?.description).toBeNull()
+    })
+
+    it('isolates prompts by workspace', () => {
+      const ws1 = new ChatPromptManager(db, 'ws-1')
+      const ws2 = new ChatPromptManager(db, 'ws-2')
+      const foreign = ws2.create({ name: 'Foreign', content: 'x' })
+
+      expect(ws1.list()).toHaveLength(0)
+      expect(ws1.get(foreign.id)).toBeUndefined()
+      expect(ws1.update(foreign.id, { name: 'hacked' })).toBeUndefined()
+      expect(ws1.delete(foreign.id)).toBe(false)
+      expect(ws2.list()).toHaveLength(1)
+    })
+
+    it('returns undefined when updating or deleting a missing prompt', () => {
+      const mgr = new ChatPromptManager(db, 'ws-1')
+      expect(mgr.update('missing', { name: 'x' })).toBeUndefined()
+      expect(mgr.delete('missing')).toBe(false)
     })
   })
 

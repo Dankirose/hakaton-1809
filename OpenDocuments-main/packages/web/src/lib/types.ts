@@ -161,6 +161,16 @@ export interface Workspace {
   createdAt: string
 }
 
+export interface ChatPrompt {
+  id: string
+  workspaceId: string
+  name: string
+  description: string | null
+  content: string
+  createdAt: string
+  updatedAt: string
+}
+
 export interface StatsResponse {
   documents: number
   workspaces: number

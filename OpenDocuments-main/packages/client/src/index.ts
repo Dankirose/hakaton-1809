@@ -127,6 +127,20 @@ export interface ConversationMessage {
   created_at?: string
 }
 
+export interface ChatPrompt {
+  id: string
+  workspaceId: string
+  name: string
+  description: string | null
+  content: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ChatPromptListResponse {
+  prompts: ChatPrompt[]
+}
+
 export interface ConversationListResponse {
   conversations: Conversation[]
   limit: number
@@ -249,5 +263,22 @@ export class OpenDocumentsClient {
 
   async shareConversation(id: string): Promise<{ shareUrl: string }> {
     return this.request(`/conversations/${encodeURIComponent(id)}/share`, { method: 'POST' })
+  }
+
+  /** List reusable chat prompts for the workspace. */
+  async listPrompts(): Promise<ChatPromptListResponse> {
+    return this.request('/prompts')
+  }
+
+  async createPrompt(input: { name: string; description?: string; content: string }): Promise<ChatPrompt> {
+    return this.request('/prompts', { method: 'POST', body: JSON.stringify(input) })
+  }
+
+  async updatePrompt(id: string, input: { name?: string; description?: string | null; content?: string }): Promise<ChatPrompt> {
+    return this.request(`/prompts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) })
+  }
+
+  async deletePrompt(id: string): Promise<{ deleted: true }> {
+    return this.request(`/prompts/${encodeURIComponent(id)}`, { method: 'DELETE' })
   }
 }

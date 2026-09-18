@@ -27,6 +27,8 @@ export interface QueryInput {
   profile?: string
   conversationId?: string
   conversationHistory?: string
+  /** Optional system prompt override (e.g. a saved chat prompt). */
+  systemPrompt?: string
 }
 
 export interface QueryResult {
@@ -145,7 +147,7 @@ export class RAGEngine {
       return { ...cached, queryId }
     }
 
-    const result = await this.handleRAG(queryId, trimmedQuery, config, profileName, route, trimmedHistory)
+    const result = await this.handleRAG(queryId, trimmedQuery, config, profileName, route, trimmedHistory, input.systemPrompt)
     // Note: Full QueryResult including source content is cached.
     // Memory impact: ~500 entries * ~10KB average = ~5MB max. Acceptable for L1 cache.
     this.queryCache.set(cacheKey, result)
@@ -198,6 +200,7 @@ export class RAGEngine {
       intent,
       conversationHistory: trimmedHistory,
       maxHistoryTokens: config.context.historyMaxTokens,
+      systemPrompt: input.systemPrompt,
     }
 
     let fullAnswer = ''
@@ -251,6 +254,7 @@ export class RAGEngine {
     profileName: string,
     route: QueryRoute,
     conversationHistory?: string,
+    systemPrompt?: string,
   ): Promise<QueryResult> {
     // Classify intent
     const intent = classifyIntent(query)
@@ -272,6 +276,7 @@ export class RAGEngine {
       intent,
       conversationHistory,
       maxHistoryTokens: config.context.historyMaxTokens,
+      systemPrompt,
     }
 
     let answer = ''

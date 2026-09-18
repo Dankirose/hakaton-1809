@@ -32,6 +32,7 @@ import {
   DocumentVersionManager,
   TagManager,
   CollectionManager,
+  ChatPromptManager,
   type DB,
   type VectorDB,
   type ModelPlugin,
@@ -385,6 +386,7 @@ export interface WorkspaceServices {
   tagManager: TagManager
   collectionManager: CollectionManager
   versionManager: DocumentVersionManager
+  promptManager: ChatPromptManager
 }
 
 /* ------------------------------------------------------------------ */
@@ -600,6 +602,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
     const tagManagers = new Map<string, TagManager>()
     const collectionManagers = new Map<string, CollectionManager>()
     const versionManagers = new Map<string, DocumentVersionManager>()
+    const promptManagers = new Map<string, ChatPromptManager>()
     const extraConnectorInstances: ConnectorPlugin[] = []
 
     const ensureWorkspaceExists = (workspaceId: string) => {
@@ -676,6 +679,16 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
       if (!manager) {
         manager = new CollectionManager(sqliteDb, workspaceId)
         collectionManagers.set(workspaceId, manager)
+      }
+      return manager
+    }
+
+    const getPromptManagerForWorkspace = (workspaceId: string) => {
+      ensureWorkspaceExists(workspaceId)
+      let manager = promptManagers.get(workspaceId)
+      if (!manager) {
+        manager = new ChatPromptManager(sqliteDb, workspaceId)
+        promptManagers.set(workspaceId, manager)
       }
       return manager
     }
@@ -898,6 +911,7 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<AppContext
         tagManager: getTagManagerForWorkspace(resolvedWorkspaceId),
         collectionManager: getCollectionManagerForWorkspace(resolvedWorkspaceId),
         versionManager: getVersionManagerForWorkspace(resolvedWorkspaceId),
+        promptManager: getPromptManagerForWorkspace(resolvedWorkspaceId),
       }
     }
 

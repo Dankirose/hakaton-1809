@@ -7,6 +7,7 @@ import { existsSync, statSync } from 'node:fs'
 import { healthRoutes } from './routes/health.js'
 import { documentRoutes } from './routes/documents.js'
 import { versionRoutes } from './routes/versions.js'
+import { promptRoutes } from './routes/prompts.js'
 import { chatRoutes } from './routes/chat.js'
 import { conversationRoutes } from './routes/conversations.js'
 import { adminRoutes } from './routes/admin.js'
@@ -116,6 +117,7 @@ export function createApp(ctx: AppContext, opts?: AppOptions) {
   app.route('/', healthRoutes(ctx))
   app.route('/', documentRoutes(ctx))
   app.route('/', versionRoutes(ctx))
+  app.route('/', promptRoutes(ctx))
   app.route('/', chatRoutes(ctx))
   app.route('/', conversationRoutes(ctx))
   app.route('/', adminRoutes(ctx))

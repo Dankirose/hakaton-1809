@@ -1,4 +1,4 @@
-import type { QueryResult, Document, StatsResponse, AdminStatsResponse, SearchQualityResponse, QueryLogsResponse, PluginHealthResponse, ConnectorStatusResponse, Conversation, ConversationMessage, WorkbenchResponse, Collection, Workspace, DocumentVersion, DocumentVersionDiff, DocumentComparison } from './types'
+import type { QueryResult, Document, StatsResponse, AdminStatsResponse, SearchQualityResponse, QueryLogsResponse, PluginHealthResponse, ConnectorStatusResponse, Conversation, ConversationMessage, WorkbenchResponse, Collection, Workspace, DocumentVersion, DocumentVersionDiff, DocumentComparison, ChatPrompt } from './types'
 import { withStoredApiKey } from './auth'
 
 const BASE = '/api/v1'
@@ -159,6 +159,23 @@ export async function deleteConversation(id: string): Promise<{ deleted: true }>
 
 export async function shareConversation(id: string): Promise<{ shareUrl: string }> {
   return request(`/conversations/${encodeURIComponent(id)}/share`, { method: 'POST' })
+}
+
+// Chat prompts
+export async function listPrompts(): Promise<{ prompts: ChatPrompt[] }> {
+  return request('/prompts')
+}
+
+export async function createPrompt(input: { name: string; description?: string; content: string }): Promise<ChatPrompt> {
+  return request('/prompts', { method: 'POST', body: JSON.stringify(input) })
+}
+
+export async function updatePrompt(id: string, input: { name?: string; description?: string | null; content?: string }): Promise<ChatPrompt> {
+  return request(`/prompts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(input) })
+}
+
+export async function deletePrompt(id: string): Promise<{ deleted: true }> {
+  return request(`/prompts/${encodeURIComponent(id)}`, { method: 'DELETE' })
 }
 
 // Admin

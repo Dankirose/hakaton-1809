@@ -3,6 +3,7 @@ import { useChatStore } from '../../stores/chatStore'
 import { useAppStore } from '../../stores/appStore'
 import { ChatInput } from './ChatInput'
 import { ChatMessage } from './ChatMessage'
+import { ChatPromptBar } from './ChatPromptBar'
 import { streamChat } from '../../lib/sse'
 import { getWorkbench, listConversations, submitFeedback, updateConversation, uploadDocument } from '../../lib/api'
 import type { WorkbenchResponse } from '../../lib/types'
@@ -27,6 +28,7 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
   const [workbench, setWorkbench] = useState<WorkbenchResponse | null>(null)
   const [workbenchError, setWorkbenchError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [promptId, setPromptId] = useState<string | null>(null)
 
   const showPreview = messages.length === 0 && !isStreaming
   const suggestedQuestions = workbench?.corpus.documents
@@ -121,7 +123,7 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
                 : error
           useChatStore.getState().failStreaming(`${t('common.error')}: ${localizedError}`, profile)
         },
-      }, abortRef.current.signal)
+      }, abortRef.current.signal, { promptId: promptId || undefined })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         useChatStore.getState().failStreaming(t('chat.cancelled'), profile)
@@ -256,6 +258,8 @@ export function ChatPage({ compact = false }: { compact?: boolean } = {}) {
               </button>
             </div>
           )}
+
+          <ChatPromptBar value={promptId} onChange={setPromptId} />
 
           <ChatInput
             onSend={handleSend}

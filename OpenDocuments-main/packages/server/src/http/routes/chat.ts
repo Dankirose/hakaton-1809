@@ -52,6 +52,16 @@ function getConversationHistory(
     .join('\n')
 }
 
+function resolveSystemPrompt(
+  promptManager: ReturnType<AppContext['forWorkspace']>['promptManager'],
+  promptId?: string,
+  systemPrompt?: string
+): string | undefined {
+  if (systemPrompt && systemPrompt.trim()) return systemPrompt.trim()
+  if (promptId) return promptManager.get(promptId)?.content
+  return undefined
+}
+
 export function chatRoutes(ctx: AppContext) {
   const app = new Hono()
 
@@ -83,7 +93,7 @@ export function chatRoutes(ctx: AppContext) {
   }
 
   app.post('/api/v1/chat', requireScope('ask'), async (c) => {
-    let body: { query: string; profile?: string; conversationId?: string; workspaceId?: string }
+    let body: { query: string; profile?: string; conversationId?: string; workspaceId?: string; promptId?: string; systemPrompt?: string }
     try {
       body = await c.req.json()
     } catch {
@@ -94,7 +104,7 @@ export function chatRoutes(ctx: AppContext) {
     const workspaceId = resolveRequestWorkspaceId(c, ctx, body.workspaceId)
     const notReady = readinessError(workspaceId)
     if (notReady) return c.json(notReady.body, notReady.status)
-    const { conversationManager, ragEngine } = getWorkspaceServices(c, ctx, body.workspaceId)
+    const { conversationManager, ragEngine, promptManager } = getWorkspaceServices(c, ctx, body.workspaceId)
 
     let conversationHistory: string | undefined
     if (body.conversationId) {
@@ -107,7 +117,12 @@ export function chatRoutes(ctx: AppContext) {
     }
 
     const startTime = Date.now()
-    const result = await ragEngine.query({ query: body.query.trim(), profile: body.profile, conversationHistory })
+    const result = await ragEngine.query({
+      query: body.query.trim(),
+      profile: body.profile,
+      conversationHistory,
+      systemPrompt: resolveSystemPrompt(promptManager, body.promptId, body.systemPrompt),
+    })
     const responseTimeMs = Date.now() - startTime
 
     persistQueryLog(ctx, {
@@ -138,7 +153,7 @@ export function chatRoutes(ctx: AppContext) {
   })
 
   app.post('/api/v1/chat/stream', requireScope('ask'), async (c) => {
-    let body: { query: string; profile?: string; conversationId?: string; workspaceId?: string }
+    let body: { query: string; profile?: string; conversationId?: string; workspaceId?: string; promptId?: string; systemPrompt?: string }
     try {
       body = await c.req.json()
     } catch {
@@ -149,7 +164,7 @@ export function chatRoutes(ctx: AppContext) {
     const workspaceId = resolveRequestWorkspaceId(c, ctx, body.workspaceId)
     const notReady = readinessError(workspaceId)
     if (notReady) return c.json(notReady.body, notReady.status)
-    const { conversationManager, ragEngine } = getWorkspaceServices(c, ctx, body.workspaceId)
+    const { conversationManager, ragEngine, promptManager } = getWorkspaceServices(c, ctx, body.workspaceId)
 
     let streamConversationHistory: string | undefined
     if (body.conversationId) {
@@ -177,6 +192,7 @@ export function chatRoutes(ctx: AppContext) {
           query: body.query.trim(),
           profile: body.profile,
           conversationHistory: streamConversationHistory,
+          systemPrompt: resolveSystemPrompt(promptManager, body.promptId, body.systemPrompt),
         })) {
           if (event.type === 'chunk') fullAnswer += event.data
           if (event.type === 'sources') sources = event.data
