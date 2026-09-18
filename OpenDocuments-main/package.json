@@ -1,0 +1,64 @@
+{
+  "name": "opendocuments-monorepo",
+  "private": true,
+  "description": "Self-hosted RAG platform for AI document search across GitHub, Notion, Google Drive, local files, and web sources",
+  "keywords": [
+    "opendocuments",
+    "rag",
+    "retrieval-augmented-generation",
+    "ai",
+    "llm",
+    "document-search",
+    "knowledge-base",
+    "self-hosted",
+    "mcp",
+    "ollama",
+    "openai",
+    "vector-search",
+    "semantic-search",
+    "embeddings",
+    "typescript",
+    "open-source"
+  ],
+  "homepage": "https://github.com/joungminsung/OpenDocuments",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joungminsung/OpenDocuments.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joungminsung/OpenDocuments/issues"
+  },
+  "author": "OpenDocuments Contributors",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "plugins/*"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run build && echo 'Setup complete. Run: npm run test'",
+    "build": "turbo build",
+    "test": "turbo test --concurrency=4",
+    "lint": "turbo typecheck",
+    "typecheck": "turbo typecheck",
+    "dev": "turbo dev",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.27.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.5.0"
+  },
+  "optionalDependencies": {
+    "@lancedb/lancedb-darwin-arm64": "0.27.1",
+    "@lancedb/lancedb-linux-arm64-gnu": "0.27.1",
+    "@lancedb/lancedb-linux-arm64-musl": "0.27.1",
+    "@lancedb/lancedb-linux-x64-gnu": "0.27.1",
+    "@lancedb/lancedb-linux-x64-musl": "0.27.1",
+    "@lancedb/lancedb-win32-arm64-msvc": "0.27.1",
+    "@lancedb/lancedb-win32-x64-msvc": "0.27.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "npm@10.0.0"
+}
